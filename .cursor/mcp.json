@@ -1,10 +1,11 @@
 {
   "mcpServers": {
     "mastra": {
-      "command": "npx",
+      "command": "wsl",
       "args": [
-        "-y",
-        "@mastra/mcp-docs-server@latest"
+        "bash",
+        "-c",
+        "'source /home/bezerker/.nvm/nvm.sh && /home/bezerker/.nvm/versions/node/v23.11.0/bin/npx -y @mastra/mcp-docs-server@latest'"
       ]
     }
   }
