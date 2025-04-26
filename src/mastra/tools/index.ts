@@ -126,15 +126,6 @@ const getWeather = async (location: string) => {
 
 const getWoWCharacterGear = async (characterName: string, serverName: string, region: string) => {
   try {
-    // Note: You'll need to set up Blizzard API credentials
-    const clientId = process.env.BLIZZARD_CLIENT_ID;
-    const clientSecret = process.env.BLIZZARD_CLIENT_SECRET;
-
-    if (!clientId || !clientSecret) {
-      console.error('Blizzard API credentials not configured');
-      throw new Error('Blizzard API credentials not configured');
-    }
-
     // Normalize character name and server name
     const normalizedCharacterName = characterName
       .trim()
@@ -154,13 +145,13 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
       region
     });
 
-    console.log('Fetching OAuth token...');
     // Get OAuth token
+    console.log('Fetching OAuth token...');
     const tokenResponse = await fetch(`https://${region}.battle.net/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`,
+        Authorization: `Basic ${Buffer.from(`${process.env.BLIZZARD_CLIENT_ID}:${process.env.BLIZZARD_CLIENT_SECRET}`).toString('base64')}`,
       },
       body: 'grant_type=client_credentials',
     });
@@ -186,63 +177,48 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
     if (!characterResponse.ok) {
       const errorText = await characterResponse.text();
       console.error('Failed to fetch character data:', errorText);
-
-      // If we get a 404, try with the game data API
-      if (characterResponse.status === 404) {
-        console.log('Character not found in profile API, trying game data API...');
-        const gameDataUrl = `https://${region}.api.blizzard.com/data/wow/character/${normalizedServerName}/${normalizedCharacterName}?namespace=profile-${region}&locale=en_US`;
-        console.log('Attempting game data lookup:', gameDataUrl.replace(/access_token=[^&]*/, 'access_token=REDACTED'));
-
-        const gameDataResponse = await fetch(gameDataUrl, {
-          headers: {
-            'Authorization': `Bearer ${access_token}`
-          }
-        });
-
-        if (!gameDataResponse.ok) {
-          const gameDataErrorText = await gameDataResponse.text();
-          console.error('Failed to fetch game data:', gameDataErrorText);
-          throw new Error(`Character '${characterName}' not found on server '${serverName}'. Please verify the character name and server name are correct.`);
-        }
-
-        const characterData = await gameDataResponse.json() as WoWCharacterResponse;
-        console.log('Successfully fetched character data from game data API');
-
-        return {
-          name: characterData.name,
-          server: characterData.realm.name,
-          level: characterData.level,
-          class: characterData.character_class.name,
-          race: characterData.race.name,
-          gender: characterData.gender.name,
-          gear: characterData.equipped_items.map(item => ({
-            slot: item.slot.name,
-            name: item.item.name,
-            quality: item.item.quality.name,
-            itemLevel: item.item.level,
-          })),
-        };
-      }
-
       throw new Error(`Failed to fetch character data: ${characterResponse.statusText}\n${errorText}`);
     }
 
-    const characterData = await characterResponse.json() as WoWCharacterResponse;
+    const characterData = await characterResponse.json();
     console.log('Successfully fetched character data from profile API');
+
+    // Get equipped items
+    const equippedItemsUrl = `https://${region}.api.blizzard.com/profile/wow/character/${normalizedServerName}/${normalizedCharacterName}/equipment?namespace=profile-${region}&locale=en_US`;
+
+    const equippedItemsResponse = await fetch(equippedItemsUrl, {
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
+
+    console.log('Equipped items response:', equippedItemsResponse);
+
+    if (!equippedItemsResponse.ok) {
+      const errorText = await equippedItemsResponse.text();
+      console.error('Failed to fetch equipped items:', errorText);
+      throw new Error(`Failed to fetch equipped items: ${equippedItemsResponse.statusText}\n${errorText}`);
+    }
+
+    const equippedItemsData = await equippedItemsResponse.json();
+    console.log('Successfully fetched equipped items');
+
+    // Process equipped items with proper error handling
+    const gear = equippedItemsData.equipped_items?.map((item: any) => ({
+      slot: item.slot?.name || 'Unknown',
+      name: item.item?.name || 'Unknown',
+      quality: item.item?.quality?.name || 'Unknown',
+      itemLevel: item.item?.level || 0,
+    })) || [];
 
     return {
       name: characterData.name,
-      server: characterData.realm.name,
-      level: characterData.level,
-      class: characterData.character_class.name,
-      race: characterData.race.name,
-      gender: characterData.gender.name,
-      gear: characterData.equipped_items.map(item => ({
-        slot: item.slot.name,
-        name: item.item.name,
-        quality: item.item.quality.name,
-        itemLevel: item.item.level,
-      })),
+      server: characterData.realm?.name || normalizedServerName,
+      level: characterData.level || 0,
+      class: characterData.character_class?.name || 'Unknown',
+      race: characterData.race?.name || 'Unknown',
+      gender: characterData.gender?.name || 'Unknown',
+      gear,
     };
   } catch (error) {
     console.error('Error in getWoWCharacterGear:', error);
