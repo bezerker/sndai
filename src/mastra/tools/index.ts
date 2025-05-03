@@ -86,6 +86,7 @@ const wowCharacterGearTool = createTool({
     class: z.string(),
     race: z.string(),
     gender: z.string(),
+    guild: z.string().optional(),
     gear: z.array(z.object({
       slot: z.string(),
       name: z.string(),
@@ -184,6 +185,9 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
     const characterData = await characterResponse.json();
     console.log('Successfully fetched character data from profile API');
 
+    // Extract guild name if present
+    const guild = characterData.guild?.name || null;
+
     // Get equipped items
     const equippedItemsUrl = `https://${region}.api.blizzard.com/profile/wow/character/${normalizedServerName}/${normalizedCharacterName}/equipment?namespace=profile-${region}&locale=en_US`;
 
@@ -220,6 +224,7 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
       class: characterData.character_class?.name || 'Unknown',
       race: characterData.race?.name || 'Unknown',
       gender: characterData.gender?.name || 'Unknown',
+      guild,
       gear,
     };
   } catch (error) {
