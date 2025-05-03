@@ -1,5 +1,6 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
+import fs from 'fs';
 
 interface GeocodingResponse {
   results: {
@@ -201,14 +202,15 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
     }
 
     const equippedItemsData = await equippedItemsResponse.json();
+    logDebug('Equipped items data: ' + JSON.stringify(equippedItemsData, null, 2));
     console.log('Successfully fetched equipped items');
 
     // Process equipped items with proper error handling
     const gear = equippedItemsData.equipped_items?.map((item: any) => ({
       slot: item.slot?.name || 'Unknown',
-      name: item.item?.name || 'Unknown',
-      quality: item.item?.quality?.name || 'Unknown',
-      itemLevel: item.item?.level || 0,
+      name: item.name || 'Unknown',
+      quality: item.quality?.name || 'Unknown',
+      itemLevel: item.level?.value || 0,
     })) || [];
 
     return {
@@ -258,6 +260,11 @@ function getWeatherCondition(code: number): string {
     99: 'Thunderstorm with heavy hail',
   };
   return conditions[code] || 'Unknown';
+}
+
+function logDebug(message: string) {
+  console.log(message);
+  fs.appendFileSync('wow_gear_debug.log', message + '\n');
 }
 
 export { weatherTool, wowCharacterGearTool };
