@@ -202,7 +202,7 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
     }
 
     const equippedItemsData = await equippedItemsResponse.json();
-    logDebug('Equipped items data: ' + JSON.stringify(equippedItemsData, null, 2));
+    // logDebug('Equipped items data: ' + JSON.stringify(equippedItemsData, null, 2));
     console.log('Successfully fetched equipped items');
 
     // Process equipped items with proper error handling
