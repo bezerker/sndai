@@ -186,7 +186,7 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
     console.log('Successfully fetched character data from profile API');
 
     // Extract guild name if present
-    const guild = characterData.guild?.name || null;
+    const guild = characterData.guild?.name;
 
     // Get equipped items
     const equippedItemsUrl = `https://${region}.api.blizzard.com/profile/wow/character/${normalizedServerName}/${normalizedCharacterName}/equipment?namespace=profile-${region}&locale=en_US`;
