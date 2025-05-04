@@ -47,7 +47,7 @@ const wowCharacterGearTool = createTool({
     class: z.string(),
     race: z.string(),
     gender: z.string(),
-    guild: z.string().optional(),
+    guild: z.string(),
     gear: z.array(z.object({
       slot: z.string(),
       name: z.string(),
