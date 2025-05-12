@@ -1,6 +1,8 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import fs from 'fs';
+// @ts-ignore
+import * as googleSr from 'google-sr';
 
 interface WoWCharacterResponse {
   name: string;
@@ -164,12 +166,41 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
   }
 };
 
+const webSearchTool = createTool({
+  id: 'web-search',
+  description: 'Search the web using Google and return top results (no API key required)',
+  inputSchema: z.object({
+    query: z.string().describe('The search query'),
+    limit: z.number().min(1).max(10).default(5).describe('Number of results to return (default 5, max 10)'),
+  }),
+  outputSchema: z.array(z.object({
+    title: z.string(),
+    link: z.string(),
+    snippet: z.string().optional(),
+  })),
+  execute: async ({ context }) => {
+    const { query, limit } = context;
+    try {
+      const results: any[] = await googleSr.search({ query });
+      logDebug('Raw google-sr results: ' + JSON.stringify(results, null, 2));
+      return results.slice(0, limit || 5).map((r: any) => ({
+        title: r.title,
+        link: r.url,
+        snippet: r.description || '',
+      }));
+    } catch (err) {
+      const error = err as Error;
+      logDebug('google-sr error: ' + (error.stack || error));
+      throw err;
+    }
+  },
+});
 
 function logDebug(message: string) {
   console.log(message);
   fs.appendFileSync('wow_gear_debug.log', message + '\n');
 }
 
-export { wowCharacterGearTool };
+export { wowCharacterGearTool, webSearchTool };
 
 
