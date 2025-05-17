@@ -1,7 +1,7 @@
 import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
-import { wowCharacterGearTool } from '../tools';
+import { wowCharacterGearTool, webSearchTool, fetchUrlContentTool } from '../tools';
 
 const memory = new Memory();
 
@@ -18,9 +18,10 @@ export const wowCharacterGearAgent = new Agent({
       - If the character isn't found, provide helpful suggestions for the user
       - Remember previous character lookups and conversations to provide better context and suggestions
 
-      Use the wowCharacterGearTool to fetch character data.
+      Use the wowCharacterGearTool to fetch character data. 
+      Use webSearchTool and fetchUrlContentTool to pull information from the internet to ensure you have the latest information on topics.
 `,
   model: openai('gpt-4o'),
-  tools: { wowCharacterGearTool },
+  tools: { wowCharacterGearTool, webSearchTool, fetchUrlContentTool },
   memory: memory,
 });
