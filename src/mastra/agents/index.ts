@@ -1,7 +1,7 @@
 import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
-import { wowCharacterGearTool, webSearchTool } from '../tools';
+import { wowCharacterGearTool, webSearchTool, fetchUrlContentTool } from '../tools';
 
 const memory = new Memory();
 
@@ -21,6 +21,6 @@ export const wowCharacterGearAgent = new Agent({
       Use the wowCharacterGearTool to fetch character data.
 `,
   model: openai('gpt-4o'),
-  tools: { wowCharacterGearTool, webSearchTool },
+  tools: { wowCharacterGearTool, webSearchTool, fetchUrlContentTool },
   memory: memory,
 });
