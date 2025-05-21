@@ -2,10 +2,28 @@ import { createOpenAI, openai } from '@ai-sdk/openai';
 import { ollama } from 'ollama-ai-provider';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
+import { LibSQLStore } from '@mastra/libsql';
+import { LibSQLVector } from '@mastra/libsql';
+import { fastembed} from '@mastra/fastembed';
+import { storage } from '../storage';
 import { mcp } from '../mcp';
 import { wowCharacterGearTool, webSearchTool, fetchUrlContentTool } from '../tools';
 
-const memory = new Memory();
+// Initialize memory storage in main directory due to deprecation.
+const memory = new Memory({
+  storage,
+  embedder: fastembed,
+  vector: new LibSQLVector({
+    connectionUrl: 'file:../../memory.db',
+  }),
+  options: {
+    lastMessages: 40,
+    semanticRecall: false,
+    threads: {
+      generateTitle: true,
+    }
+  }
+});
 
 // Get the model provider from environment variable, default to 'openai'
 const modelProvider = process.env.MODEL_PROVIDER?.toLowerCase() || 'openai';
