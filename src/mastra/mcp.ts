@@ -1,5 +1,4 @@
 import { MCPClient } from "@mastra/mcp";
-import { Agent } from "@mastra/core/agent";
 
 // Configure mcp client to connect to servers
 export const mcp = new MCPClient({

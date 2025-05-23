@@ -2,7 +2,6 @@ import { createOpenAI, openai } from '@ai-sdk/openai';
 import { ollama } from 'ollama-ai-provider';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
-import { LibSQLStore } from '@mastra/libsql';
 import { LibSQLVector } from '@mastra/libsql';
 import { fastembed} from '@mastra/fastembed';
 import { storage } from '../storage';
