@@ -4,6 +4,7 @@ import fs from 'fs';
 import { extract } from '@extractus/article-extractor';
 // @ts-ignore
 import * as googleSr from 'google-sr';
+import { dataFreshnessTool } from './data-freshness';
 
 interface WoWCharacterResponse {
   name: string;
@@ -273,6 +274,11 @@ async function fetchAndExtract(url: string) {
 //     // ...
 //   }
 
-export { wowCharacterGearTool, webSearchTool, fetchUrlContentTool };
+export { 
+  wowCharacterGearTool, 
+  webSearchTool, 
+  fetchUrlContentTool,
+  dataFreshnessTool 
+};
 
 

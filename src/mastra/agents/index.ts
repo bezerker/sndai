@@ -6,7 +6,8 @@ import { LibSQLVector } from '@mastra/libsql';
 import { fastembed} from '@mastra/fastembed';
 import { storage } from '../storage';
 import { mcp } from '../mcp';
-import { wowCharacterGearTool, webSearchTool, fetchUrlContentTool } from '../tools';
+import { wowCharacterGearTool } from '../tools';
+import { ItemRecommendationService } from '../services/item-recommendation';
 
 // Initialize memory storage in main directory due to deprecation.
 const memory = new Memory({
@@ -35,7 +36,6 @@ const openaiApiKey = process.env.OPENAI_API_KEY || 'lm-studio';
 
 const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.1:latest';
 
-
 const model = modelProvider === 'openai' 
   ? createOpenAI({
     baseURL: openaiBaseUrl,
@@ -60,14 +60,37 @@ export const wowCharacterGearAgent = new Agent({
       - Always validate that the item you are recommending is for that item slot.
       - Only recommend items that are relevant to the current expansion.
 
-      Use the wowCharacterGearTool to fetch character data and then always use brave_brave_web_search to search and fetch information from the internet to ensure you have the latest and most accurate information.
+      For providing up-to-date recommendations:
+      1. Character Data:
+         * Always fetch fresh character data using wowCharacterGearTool
+         * Cross-reference current gear with latest recommendations
+         * Consider character's current progression level
+
+      2. Item Recommendations:
+         * Use the ItemRecommendationService to get current recommendations
+         * Focus on reputable sources like Wowhead, Icy-Veins, and class discords
+         * Prioritize recent content (last 2 weeks) for meta information
+         * Consider both BiS and alternative options
+         * Include acquisition methods and difficulty levels
+
+      3. Game Mode Specific:
+         * For Mythic+: Check current season affixes and dungeon-specific recommendations
+         * For Raid: Consider current raid tier and boss-specific requirements
+         * For PvP: Check current season meta and rating brackets
+         * For World Content: Consider open world and solo play viability
+
+      4. Data Freshness:
+         * Always verify item availability in current patch
+         * Check for recent hotfixes or changes
+         * Consider upcoming changes from PTR if relevant
+         * Provide alternative options if BiS items are not easily obtainable
+
+      Use the wowCharacterGearTool to fetch character data and then use the ItemRecommendationService to get up-to-date recommendations.
 `,
   model,
   tools: { 
     ...(await mcp.getTools()),
-    wowCharacterGearTool, 
-    // webSearchTool, 
-    // fetchUrlContentTool 
+    wowCharacterGearTool,
   },
   memory: memory,
 });
