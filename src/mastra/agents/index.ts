@@ -7,7 +7,7 @@ import { fastembed} from '@mastra/fastembed';
 import { storage } from '../storage';
 import { mcp } from '../mcp';
 import { wowCharacterGearTool } from '../tools';
-import { ItemRecommendationService } from '../services/item-recommendation';
+import { bisScraperTool } from '../tools/bisTool';
 
 // Initialize memory storage in main directory due to deprecation.
 const memory = new Memory({
@@ -67,7 +67,7 @@ export const wowCharacterGearAgent = new Agent({
          * Consider character's current progression level
 
       2. Item Recommendations:
-         * Use the ItemRecommendationService to get current recommendations
+         * Use the web search tool to get current recommendations
          * Focus on reputable sources like Wowhead, Icy-Veins, and class discords
          * Prioritize recent content (last 2 weeks) for meta information
          * Consider both BiS and alternative options
@@ -85,12 +85,13 @@ export const wowCharacterGearAgent = new Agent({
          * Consider upcoming changes from PTR if relevant
          * Provide alternative options if BiS items are not easily obtainable
 
-      Use the wowCharacterGearTool to fetch character data and then use the ItemRecommendationService to get up-to-date recommendations.
+      Use the wowCharacterGearTool to fetch character data and then use the web search tool to get up-to-date recommendations.
 `,
   model,
   tools: { 
     ...(await mcp.getTools()),
     wowCharacterGearTool,
+    bisScraperTool,
   },
   memory: memory,
 });
