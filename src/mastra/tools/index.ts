@@ -4,7 +4,7 @@ import fs from 'fs';
 import { extract } from '@extractus/article-extractor';
 // @ts-ignore
 import * as googleSr from 'google-sr';
-import { dataFreshnessTool } from './data-freshness';
+import { bisScraperTool } from './bisTool';
 
 interface WoWCharacterResponse {
   name: string;
@@ -278,7 +278,7 @@ export {
   wowCharacterGearTool, 
   webSearchTool, 
   fetchUrlContentTool,
-  dataFreshnessTool 
+  bisScraperTool,
 };
 
 

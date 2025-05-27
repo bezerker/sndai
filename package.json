@@ -23,13 +23,17 @@
     "@mastra/mcp-docs-server": "^0.10.0",
     "@mastra/memory": "^0.10.0",
     "@modelcontextprotocol/server-brave-search": "^0.6.2",
+    "cheerio": "^1.0.0",
     "google-sr": "^5.0.0",
     "ollama-ai-provider": "^1.2.0",
+    "ts-node": "^10.9.2",
+    "undici": "^7.10.0",
     "zod": "^3.24.3"
   },
   "devDependencies": {
     "@types/node": "^22.15.2",
     "mastra": "^0.10.0",
+    "playright": "^0.0.22",
     "typescript": "^5.8.3"
   }
 }
