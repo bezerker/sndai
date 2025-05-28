@@ -3,6 +3,7 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { fetch } from "undici";
 import { load, Cheerio } from "cheerio";
+import { getRoleForSpecId } from './specRoleMap';
 
 /* ---------- internal helpers ---------- */
 const BASE = "https://www.icy-veins.com/wow/";
@@ -22,10 +23,25 @@ const scrapeIcyVeins = async (spec: string, cls: string, role = "") => {
   const html = await (await fetch(url)).text();
   const $ = load(html);
 
-  // Find the heading containing 'Overall BiS Gear' (case-insensitive)
-  const header = $("h2, h3").filter((_, el) =>
-    $(el).text().toLowerCase().includes("overall bis gear")
-  ).first();
+  // Debug: Print all h2/h3 headings on the page
+  console.log('[BiS Debug] All h2/h3 headings on the page:');
+  $("h2, h3").each((_, el) => {
+    console.log('-', $(el).text().trim());
+  });
+
+  // Find the heading containing a BiS-related phrase (case-insensitive)
+  const header = $("h2, h3").filter((_, el) => {
+    const text = $(el).text().toLowerCase();
+    return (
+      text.includes("overall bis gear") ||
+      text.includes("best in slot gear guide") ||
+      text.includes("bis gear for") ||
+      text.includes("best gear for") ||
+      text.includes("best in slot") ||
+      text.includes("bis") ||
+      text.includes("overall bis list for season")
+    );
+  }).first();
   console.log(`[BiS Debug] Header found:`, header.length > 0);
   if (!header.length) {
     console.error(`[BiS Debug] BiS header not found for URL:`, url);
@@ -83,7 +99,8 @@ export const bisScraperTool = createTool({
   inputSchema: z.object({
     spec: z.string(),
     cls: z.string(),
-    role: z.enum(["tank", "healing", "dps"]).optional(),
+    specId: z.preprocess(val => typeof val === 'string' ? parseInt(val, 10) : val, z.number().optional()),
+    role: z.preprocess(val => typeof val === 'string' ? val.toLowerCase() : val, z.enum(["tank", "healing", "dps"]).optional()),
   }),
   outputSchema: z.object({
     spec: z.string(),
@@ -92,5 +109,20 @@ export const bisScraperTool = createTool({
     source: z.string().url(),
     bis: z.record(z.string(), z.string()),
   }),
-  execute: async ({ context }) => scrapeIcyVeins(context.spec, context.cls, context.role),
+  execute: async ({ context }) => {
+    let { spec, cls, specId, role } = context;
+    console.log('[BiS Debug] Received input:', { spec, cls, specId, role, typeofSpecId: typeof specId, typeofRole: typeof role });
+    if (!role && specId !== undefined) {
+      role = getRoleForSpecId(specId);
+      if (!role) {
+        console.warn(`[BiS Debug] Could not auto-determine role for specId: ${specId}`);
+      } else {
+        console.log(`[BiS Debug] Auto-filled role for specId ${specId}: ${role}`);
+      }
+    }
+    if (!role) {
+      throw new Error("Role could not be determined. Please provide a valid specId or role.");
+    }
+    return scrapeIcyVeins(spec, cls, role);
+  },
 });
