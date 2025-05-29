@@ -1,6 +1,4 @@
-# sndai
-
-# sndai - WoW Character Gear Agent
+# sndai - Stand and Deliver Guild's WoW Character Gear Agent
 
 ## Overview
 
@@ -82,8 +80,8 @@ This project is the official AI-powered agent for the **Stand and Deliver** guil
 
 ## License
 
-Apache License 2.0. See the LICENSE file for details.
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
-For questions or contributions, please open an issue or pull request on the repository.
+For questions or contributions, please open an issue or pull request on the repository. If you're interested in joining the Stand and Deliver guild, visit [https://sndguild.com](https://sndguild.com).
