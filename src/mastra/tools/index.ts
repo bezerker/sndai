@@ -37,21 +37,7 @@ interface WoWCharacterResponse {
 }
 
 // Static mapping from spec ID to role
-const SPEC_ID_TO_ROLE: Record<number, 'tank' | 'healer' | 'dps'> = {
-  250: 'tank', 251: 'dps', 252: 'dps', // Death Knight
-  577: 'dps', 581: 'tank', // Demon Hunter
-  102: 'dps', 103: 'dps', 104: 'tank', 105: 'healer', // Druid
-  1467: 'dps', 1468: 'healer', 1473: 'dps', // Evoker
-  253: 'dps', 254: 'dps', 255: 'dps', // Hunter
-  62: 'dps', 63: 'dps', 64: 'dps', // Mage
-  268: 'tank', 269: 'dps', 270: 'healer', // Monk
-  65: 'healer', 66: 'tank', 70: 'dps', // Paladin
-  256: 'healer', 257: 'healer', 258: 'dps', // Priest
-  259: 'dps', 260: 'dps', 261: 'dps', // Rogue
-  262: 'dps', 263: 'dps', 264: 'healer', // Shaman
-  265: 'dps', 266: 'dps', 267: 'dps', // Warlock
-  71: 'dps', 72: 'dps', 73: 'tank', // Warrior
-};
+import { SPEC_ID_TO_ROLE } from './specRoleMap';
 
 const wowCharacterGearTool = createTool({
   id: 'get-wow-character-gear',
