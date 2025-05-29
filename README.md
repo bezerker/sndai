@@ -4,7 +4,9 @@
 
 ## Overview
 
-This project provides an AI-powered agent for World of Warcraft (WoW) character and gear recommendations, leveraging the Mastra framework. The agent fetches live character data, scrapes Best-in-Slot (BiS) gear tables from Icy-Veins, and uses web search to provide up-to-date recommendations tailored to the current patch (11.1.5).
+This project is the official AI-powered agent for the **Stand and Deliver** guild in World of Warcraft. It provides character and gear recommendations, leveraging the Mastra framework. The agent fetches live character data, scrapes Best-in-Slot (BiS) gear tables from Icy-Veins, and uses web search to provide up-to-date recommendations tailored to the current patch (11.1.5).
+
+> **Stand and Deliver is recruiting!** If you're interested in joining our community, visit [https://sndguild.com](https://sndguild.com) for more information.
 
 ## Features
 
@@ -80,7 +82,7 @@ This project provides an AI-powered agent for World of Warcraft (WoW) character 
 
 ## License
 
-ISC (see package.json)
+Apache License 2.0. See the LICENSE file for details.
 
 ## Contact
 
