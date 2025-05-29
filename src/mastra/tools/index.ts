@@ -37,20 +37,20 @@ interface WoWCharacterResponse {
 }
 
 // Static mapping from spec ID to role
-const SPEC_ID_TO_ROLE: Record<number, 'TANK' | 'HEALER' | 'DPS'> = {
-  250: 'TANK', 251: 'DPS', 252: 'DPS', // Death Knight
-  577: 'DPS', 581: 'TANK', // Demon Hunter
-  102: 'DPS', 103: 'DPS', 104: 'TANK', 105: 'HEALER', // Druid
-  1467: 'DPS', 1468: 'HEALER', 1473: 'DPS', // Evoker
-  253: 'DPS', 254: 'DPS', 255: 'DPS', // Hunter
-  62: 'DPS', 63: 'DPS', 64: 'DPS', // Mage
-  268: 'TANK', 269: 'DPS', 270: 'HEALER', // Monk
-  65: 'HEALER', 66: 'TANK', 70: 'DPS', // Paladin
-  256: 'HEALER', 257: 'HEALER', 258: 'DPS', // Priest
-  259: 'DPS', 260: 'DPS', 261: 'DPS', // Rogue
-  262: 'DPS', 263: 'DPS', 264: 'HEALER', // Shaman
-  265: 'DPS', 266: 'DPS', 267: 'DPS', // Warlock
-  71: 'DPS', 72: 'DPS', 73: 'TANK', // Warrior
+const SPEC_ID_TO_ROLE: Record<number, 'tank' | 'healer' | 'dps'> = {
+  250: 'tank', 251: 'dps', 252: 'dps', // Death Knight
+  577: 'dps', 581: 'tank', // Demon Hunter
+  102: 'dps', 103: 'dps', 104: 'tank', 105: 'healer', // Druid
+  1467: 'dps', 1468: 'healer', 1473: 'dps', // Evoker
+  253: 'dps', 254: 'dps', 255: 'dps', // Hunter
+  62: 'dps', 63: 'dps', 64: 'dps', // Mage
+  268: 'tank', 269: 'dps', 270: 'healer', // Monk
+  65: 'healer', 66: 'tank', 70: 'dps', // Paladin
+  256: 'healer', 257: 'healer', 258: 'dps', // Priest
+  259: 'dps', 260: 'dps', 261: 'dps', // Rogue
+  262: 'dps', 263: 'dps', 264: 'healer', // Shaman
+  265: 'dps', 266: 'dps', 267: 'dps', // Warlock
+  71: 'dps', 72: 'dps', 73: 'tank', // Warrior
 };
 
 const wowCharacterGearTool = createTool({
