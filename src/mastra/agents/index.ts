@@ -52,7 +52,9 @@ export const wowCharacterGearAgent = new Agent({
       - Remember that the current patch is 11.1.5.
       - Always ask for both character name and server name if not provided however default to the US region.
       - Make sure we know from the user what their primary game mode is (mythic+, raid, pvp, etc)
-      - If the user is asking about a specific item, use the wowCharacterGearTool to fetch the item data use that in your decisions.
+      - If the user is asking about Best-in-Slot (BiS) gear for a class/spec/role, use the bisScraperTool to fetch the latest BiS table from Icy-Veins and use that in your recommendations.
+      - If the user is asking about a specific item or their current gear, use the wowCharacterGearTool to fetch the item or character data and use that in your decisions.
+      - When calling the bisScraperTool, always pass the specId and role fields from the wowCharacterGearTool output if they are available, in addition to spec and class.
       - Present the information in a clear, organized manner
       - Include all relevant details about the character and their gear
       - If the character isn't found, provide helpful suggestions for the user
@@ -85,7 +87,7 @@ export const wowCharacterGearAgent = new Agent({
          * Consider upcoming changes from PTR if relevant
          * Provide alternative options if BiS items are not easily obtainable
 
-      Use the wowCharacterGearTool to fetch character data and then use the web search tool to get up-to-date recommendations.
+      Use the wowCharacterGearTool to fetch character data, the bisScraperTool to fetch BiS gear tables, and the web search tool to get up-to-date recommendations.
 `,
   model,
   tools: { 

@@ -36,6 +36,9 @@ interface WoWCharacterResponse {
   }>;
 }
 
+// Static mapping from spec ID to role
+import { SPEC_ID_TO_ROLE } from './specRoleMap';
+
 const wowCharacterGearTool = createTool({
   id: 'get-wow-character-gear',
   description: 'Get World of Warcraft character information and gear by name and server',
@@ -52,6 +55,13 @@ const wowCharacterGearTool = createTool({
     race: z.string(),
     gender: z.string(),
     guild: z.string(),
+    spec: z.string(),
+    specId: z.number().optional(),
+    role: z.string(),
+    heroTalentTree: z.object({
+      id: z.number(),
+      name: z.string(),
+    }).nullable().optional(),
     gear: z.array(z.object({
       slot: z.string(),
       name: z.string(),
@@ -123,6 +133,87 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
     const characterData = await characterResponse.json();
     console.log('Successfully fetched character data from profile API');
 
+    // Fetch specialization info
+    const specUrl = `https://${region}.api.blizzard.com/profile/wow/character/${normalizedServerName}/${normalizedCharacterName}/specializations?namespace=profile-${region}&locale=en_US`;
+    console.log('Fetching specialization info:', specUrl);
+    const specResponse = await fetch(specUrl, {
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
+    if (!specResponse.ok) {
+      const errorText = await specResponse.text();
+      console.error('Failed to fetch specialization data:', errorText);
+      throw new Error(`Failed to fetch specialization data: ${specResponse.statusText}\n${errorText}`);
+    }
+    const specData = await specResponse.json();
+    logDebug('Specialization API response: ' + JSON.stringify(specData, null, 2));
+    let spec = 'Unknown';
+    let specId: number | undefined = undefined;
+    let role = 'Unknown';
+    let heroTalentTree = null;
+
+    if (specData.active_specialization) {
+      spec = specData.active_specialization.name || 'Unknown';
+      specId = specData.active_specialization.id;
+      const specIdLocal = specId;
+      logDebug(`Parsed spec from active_specialization: ${spec} (id: ${specIdLocal})`);
+      // Try to get role from the API if not present
+      try {
+        const playableSpecUrl = `https://${region}.api.blizzard.com/data/wow/playable-specialization/${specIdLocal}?namespace=static-${region}&locale=en_US&access_token=${access_token}`;
+        logDebug('Fetching playable-specialization for role: ' + playableSpecUrl);
+        const playableSpecResponse = await fetch(playableSpecUrl);
+        if (playableSpecResponse.ok) {
+          const playableSpecData = await playableSpecResponse.json();
+          logDebug('Playable-specialization API response: ' + JSON.stringify(playableSpecData, null, 2));
+          if (playableSpecData.role && playableSpecData.role.type) {
+            role = playableSpecData.role.type;
+            logDebug(`Parsed role from playable-specialization: ${role}`);
+          } else if (specIdLocal !== undefined) {
+            // Use static mapping if API doesn't provide role
+            role = SPEC_ID_TO_ROLE[specIdLocal] || 'Unknown';
+            logDebug(`Role not found in API, using static mapping: ${role}`);
+          }
+        } else if (specIdLocal !== undefined) {
+          // Use static mapping if API call fails
+          role = SPEC_ID_TO_ROLE[specIdLocal] || 'Unknown';
+          logDebug('Failed to fetch playable-specialization, using static mapping: ' + role);
+        }
+      } catch (err) {
+        if (specIdLocal !== undefined) {
+          // Use static mapping if fetch throws
+          role = SPEC_ID_TO_ROLE[specIdLocal] || 'Unknown';
+          logDebug('Error fetching playable-specialization, using static mapping: ' + role);
+        }
+      }
+    } else if (specData.specializations && Array.isArray(specData.specializations)) {
+      const selectedSpec = specData.specializations.find((s: any) => s.selected);
+      logDebug('Selected specialization: ' + JSON.stringify(selectedSpec, null, 2));
+      if (selectedSpec && selectedSpec.specialization) {
+        spec = selectedSpec.specialization.name || 'Unknown';
+        specId = selectedSpec.specialization.id;
+        const specIdLocal = specId;
+        if (specIdLocal !== undefined) {
+          role = (selectedSpec.specialization.role && selectedSpec.specialization.role.type) || SPEC_ID_TO_ROLE[specIdLocal] || 'Unknown';
+        } else {
+          role = (selectedSpec.specialization.role && selectedSpec.specialization.role.type) || 'Unknown';
+        }
+        logDebug(`Parsed spec: ${spec}, role: ${role}`);
+      } else {
+        logDebug('No selected specialization found or missing specialization field.');
+      }
+    } else {
+      logDebug('No specializations array or active_specialization found in specData.');
+    }
+
+    if (specData.active_hero_talent_tree) {
+      heroTalentTree = {
+        id: specData.active_hero_talent_tree.id,
+        name: specData.active_hero_talent_tree.name,
+      };
+      logDebug('Parsed heroTalentTree: ' + JSON.stringify(heroTalentTree));
+    }
+
     // Get equipped items
     const equippedItemsUrl = `https://${region}.api.blizzard.com/profile/wow/character/${normalizedServerName}/${normalizedCharacterName}/equipment?namespace=profile-${region}&locale=en_US`;
 
@@ -160,6 +251,10 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
       race: characterData.race?.name || 'Unknown',
       gender: characterData.gender?.name || 'Unknown',
       guild: characterData.guild?.name || 'Unknown',
+      spec,
+      specId,
+      role,
+      heroTalentTree,
       gear,
     };
   } catch (error) {
