@@ -1,7 +1,0 @@
-{
-  "mcpServers": {
-    "mastra": {
-      "command": "mcp-docs-server"
-    }
-  }
-}
