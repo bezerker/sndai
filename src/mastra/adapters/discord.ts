@@ -12,7 +12,7 @@ type DiscordConfig = z.infer<typeof discordConfigSchema>;
 export class DiscordAdapter {
   private client: Client;
   private config: DiscordConfig;
-  private messageHandler?: (message: string) => Promise<string>;
+  private messageHandler?: (message: Message) => Promise<string>;
 
   constructor() {
     // Load config from environment variables
@@ -66,19 +66,15 @@ export class DiscordAdapter {
       if (mentioned) {
         try {
           // Remove the bot mention from the message
-          const cleanMessage = message.content.replace(`<@${this.client.user!.id}>`, '').trim();
-          debugLog('[DiscordAdapter]', 'Cleaned message:', cleanMessage);
-          
+          // (leave as is, but pass the full message to handler)
           if (this.messageHandler) {
             // Show typing indicator if the channel is a text channel
             if (message.channel instanceof TextChannel) {
               await message.channel.sendTyping();
             }
-            
             // Get response from the agent
-            const response = await this.messageHandler(cleanMessage);
+            const response = await this.messageHandler(message);
             debugLog('[DiscordAdapter]', 'Agent response:', response);
-            
             // Split and send the response in chunks if needed
             const chunks = DiscordAdapter.splitMessage(response);
             for (const chunk of chunks) {
@@ -94,7 +90,7 @@ export class DiscordAdapter {
     });
   }
 
-  public setMessageHandler(handler: (message: string) => Promise<string>) {
+  public setMessageHandler(handler: (message: Message) => Promise<string>) {
     this.messageHandler = handler;
   }
 
