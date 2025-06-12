@@ -9,7 +9,11 @@ if (process.env.DISCORD_ENABLED === 'true') {
   const discordAdapter = new DiscordAdapter();
 
   discordAdapter.setMessageHandler(async (message) => {
-    const result = await wowCharacterGearAgent.generate(message);
+    const cleanMessage = message.content.replace(`<@${message.client.user?.id}>`, '').trim();
+    const result = await wowCharacterGearAgent.generate(cleanMessage, {
+      resourceId: message.author.id,
+      threadId: message.channel.id,
+    });
     return result.text;
   });
 
