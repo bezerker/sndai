@@ -45,6 +45,20 @@ export class DiscordAdapter {
       console.log(`Discord bot logged in as ${this.client.user?.tag}`);
     });
 
+    // Additional connection and error event logging
+    this.client.on('shardDisconnect', (event, id) => {
+      this.logDebug(`Shard ${id} disconnected:`, event);
+    });
+    this.client.on('shardReconnecting', (id) => {
+      this.logDebug(`Shard ${id} reconnecting...`);
+    });
+    this.client.on('error', (error) => {
+      this.logDebug('Discord client error:', error);
+    });
+    this.client.on('warn', (info) => {
+      this.logDebug('Discord client warning:', info);
+    });
+
     this.client.on(Events.MessageCreate, async (message: Message) => {
       this.logDebug('Message received:', {
         content: message.content,
