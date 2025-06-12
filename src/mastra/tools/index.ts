@@ -5,6 +5,7 @@ import { extract } from '@extractus/article-extractor';
 // @ts-ignore
 import * as googleSr from 'google-sr';
 import { bisScraperTool } from './bisTool';
+import { debugLog } from '../debugLog';
 
 interface WoWCharacterResponse {
   name: string;
@@ -375,5 +376,3 @@ export {
   fetchUrlContentTool,
   bisScraperTool,
 };
-
-

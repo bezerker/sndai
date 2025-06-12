@@ -1,5 +1,6 @@
 import { Client, Events, GatewayIntentBits, Message, TextChannel } from 'discord.js';
 import { z } from 'zod';
+import { debugLog } from '../debugLog';
 
 const discordConfigSchema = z.object({
   token: z.string().min(1),
@@ -12,7 +13,6 @@ export class DiscordAdapter {
   private client: Client;
   private config: DiscordConfig;
   private messageHandler?: (message: string) => Promise<string>;
-  private debug: boolean;
 
   constructor() {
     // Load config from environment variables
@@ -20,8 +20,6 @@ export class DiscordAdapter {
       token: process.env.DISCORD_BOT_TOKEN,
       clientId: process.env.DISCORD_CLIENT_ID,
     });
-
-    this.debug = !!process.env.DEBUG;
 
     this.client = new Client({
       intents: [
@@ -34,12 +32,6 @@ export class DiscordAdapter {
     this.setupEventHandlers();
   }
 
-  private logDebug(...args: any[]) {
-    if (this.debug) {
-      console.debug('[DiscordAdapter]', ...args);
-    }
-  }
-
   private setupEventHandlers() {
     this.client.on(Events.ClientReady, () => {
       console.log(`Discord bot logged in as ${this.client.user?.tag}`);
@@ -47,20 +39,20 @@ export class DiscordAdapter {
 
     // Additional connection and error event logging
     this.client.on('shardDisconnect', (event, id) => {
-      this.logDebug(`Shard ${id} disconnected:`, event);
+      debugLog('[DiscordAdapter]', `Shard ${id} disconnected:`, event);
     });
     this.client.on('shardReconnecting', (id) => {
-      this.logDebug(`Shard ${id} reconnecting...`);
+      debugLog('[DiscordAdapter]', `Shard ${id} reconnecting...`);
     });
     this.client.on('error', (error) => {
-      this.logDebug('Discord client error:', error);
+      debugLog('[DiscordAdapter]', 'Discord client error:', error);
     });
     this.client.on('warn', (info) => {
-      this.logDebug('Discord client warning:', info);
+      debugLog('[DiscordAdapter]', 'Discord client warning:', info);
     });
 
     this.client.on(Events.MessageCreate, async (message: Message) => {
-      this.logDebug('Message received:', {
+      debugLog('[DiscordAdapter]', 'Message received:', {
         content: message.content,
         author: message.author.tag,
         channel: message.channel.id,
@@ -70,12 +62,12 @@ export class DiscordAdapter {
 
       // Check if the bot was mentioned
       const mentioned = message.mentions.has(this.client.user!);
-      this.logDebug('Bot mentioned:', mentioned);
+      debugLog('[DiscordAdapter]', 'Bot mentioned:', mentioned);
       if (mentioned) {
         try {
           // Remove the bot mention from the message
           const cleanMessage = message.content.replace(`<@${this.client.user!.id}>`, '').trim();
-          this.logDebug('Cleaned message:', cleanMessage);
+          debugLog('[DiscordAdapter]', 'Cleaned message:', cleanMessage);
           
           if (this.messageHandler) {
             // Show typing indicator if the channel is a text channel
@@ -85,14 +77,14 @@ export class DiscordAdapter {
             
             // Get response from the agent
             const response = await this.messageHandler(cleanMessage);
-            this.logDebug('Agent response:', response);
+            debugLog('[DiscordAdapter]', 'Agent response:', response);
             
             // Split and send the response in chunks if needed
             const chunks = DiscordAdapter.splitMessage(response);
             for (const chunk of chunks) {
               await message.reply(chunk);
             }
-            this.logDebug('Replied to message');
+            debugLog('[DiscordAdapter]', 'Replied to message');
           }
         } catch (error) {
           console.error('Error handling Discord message:', error);

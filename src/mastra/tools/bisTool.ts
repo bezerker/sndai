@@ -4,6 +4,7 @@ import { z } from "zod";
 import { fetch } from "undici";
 import { load, Cheerio } from "cheerio";
 import { getRoleForSpecId } from './specRoleMap';
+import { debugLog } from '../debugLog';
 
 /* ---------- internal helpers ---------- */
 const BASE = "https://www.icy-veins.com/wow/";
