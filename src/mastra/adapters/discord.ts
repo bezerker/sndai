@@ -68,19 +68,33 @@ export class DiscordAdapter {
           // Remove the bot mention from the message
           // (leave as is, but pass the full message to handler)
           if (this.messageHandler) {
-            // Show typing indicator if the channel is a text channel
-            if (message.channel instanceof TextChannel) {
-              await message.channel.sendTyping();
+            debugLog('[DiscordAdapter]', 'Calling messageHandler...');
+            try {
+              if (message.channel instanceof TextChannel) {
+                await message.channel.sendTyping();
+              }
+              const response = await this.messageHandler(message);
+              debugLog('[DiscordAdapter]', 'Agent response:', response);
+
+              // Remove <think>...</think> section if it exists (robust, case-insensitive, multiline, allow whitespace)
+              const cleanedResponse = response?.replace(/<think[^>]*>[\s\S]*?<\/think>/gi, '').trim();
+              debugLog('[DiscordAdapter]', 'Cleaned agent response:', cleanedResponse);
+
+              if (!cleanedResponse) {
+                await message.reply('Sorry, I have no response to show.');
+                return;
+              }
+              const chunks = DiscordAdapter.splitMessage(cleanedResponse);
+              for (const chunk of chunks) {
+                await message.reply(chunk);
+              }
+              debugLog('[DiscordAdapter]', 'Replied to message');
+            } catch (err) {
+              console.error('[DiscordAdapter] Error in messageHandler:', err);
+              await message.reply('Sorry, I encountered an error while processing your message.');
             }
-            // Get response from the agent
-            const response = await this.messageHandler(message);
-            debugLog('[DiscordAdapter]', 'Agent response:', response);
-            // Split and send the response in chunks if needed
-            const chunks = DiscordAdapter.splitMessage(response);
-            for (const chunk of chunks) {
-              await message.reply(chunk);
-            }
-            debugLog('[DiscordAdapter]', 'Replied to message');
+          } else {
+            debugLog('[DiscordAdapter]', 'No messageHandler set!');
           }
         } catch (error) {
           console.error('Error handling Discord message:', error);

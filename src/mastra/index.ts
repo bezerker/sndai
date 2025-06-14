@@ -9,12 +9,21 @@ if (process.env.DISCORD_ENABLED === 'true') {
   const discordAdapter = new DiscordAdapter();
 
   discordAdapter.setMessageHandler(async (message) => {
+    debugLog('[DiscordHandler]', 'Handler called with message:', message.content);
     const cleanMessage = message.content.replace(`<@${message.client.user?.id}>`, '').trim();
-    const result = await wowCharacterGearAgent.generate(cleanMessage, {
-      resourceId: message.author.id,
-      threadId: message.channel.id,
-    });
-    return result.text;
+    debugLog('[DiscordHandler]', 'Cleaned message:', cleanMessage);
+    try {
+      const result = await wowCharacterGearAgent.generate(cleanMessage, {
+        resourceId: message.author.id,
+        threadId: message.channel.id,
+        temperature: 0.2,
+      });
+      debugLog('[DiscordHandler]', 'Agent result:', result);
+      return result.text;
+    } catch (err) {
+      debugLog('[DiscordHandler]', 'Error in agent.generate:', err);
+      return 'Sorry, I encountered an error while processing your request.';
+    }
   });
 
   discordAdapter.start().catch((error) => {
