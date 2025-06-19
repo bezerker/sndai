@@ -3,7 +3,6 @@ import { PinoLogger } from '@mastra/loggers';
 import { wowCharacterGearAgent } from './agents';
 import { storage } from './storage';
 import { DiscordAdapter } from './adapters/discord';
-import { debugLog } from './debugLog';
 
 if (process.env.DISCORD_ENABLED === 'true') {
   const discordAdapter = new DiscordAdapter();
