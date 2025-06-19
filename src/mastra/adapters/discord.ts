@@ -84,7 +84,12 @@ export class DiscordAdapter {
           }
         } catch (error) {
           console.error('Error handling Discord message:', error);
-          await message.reply('Sorry, I encountered an error while processing your message.');
+          debugLog('[DiscordAdapter]', 'Error details:', {
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          });
+          await message.reply('Sorry, I encountered an error while processing your message. Error: ' + 
+            (error instanceof Error ? error.message : String(error)));
         }
       }
     });

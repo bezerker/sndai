@@ -12,7 +12,7 @@ if (process.env.DISCORD_ENABLED === 'true') {
     const result = await wowCharacterGearAgent.generate(cleanMessage, {
       resourceId: message.author.id,
       threadId: message.channel.id,
-      temperature: 0.2,
+      // temperature: 0.2,
     });
     const cleanedText = result.text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     return cleanedText;
