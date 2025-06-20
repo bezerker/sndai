@@ -3,7 +3,6 @@ import { PinoLogger } from '@mastra/loggers';
 import { wowCharacterGearAgent } from './agents';
 import { storage } from './storage';
 import { DiscordAdapter } from './adapters/discord';
-import { debugLog } from './debugLog';
 
 if (process.env.DISCORD_ENABLED === 'true') {
   const discordAdapter = new DiscordAdapter();
@@ -13,8 +12,10 @@ if (process.env.DISCORD_ENABLED === 'true') {
     const result = await wowCharacterGearAgent.generate(cleanMessage, {
       resourceId: message.author.id,
       threadId: message.channel.id,
+      // temperature: 0.2,
     });
-    return result.text;
+    const cleanedText = result.text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    return cleanedText;
   });
 
   discordAdapter.start().catch((error) => {

@@ -52,6 +52,11 @@ export const wowCharacterGearAgent = new Agent({
       - Remember that the current patch is 11.1.5.
       - Always ask for both character name and server name if not provided however default to the US region.
       - Make sure we know from the user what their primary game mode is (mythic+, raid, pvp, etc)
+      - When looking up BiS gear:
+        * ALWAYS determine the role (tank, healing, dps) before using bisScraperTool
+        * If you have character data from wowCharacterGearTool, use its specId to determine role
+        * If no character data, explicitly ask the user for their role if not clear from context
+        * The role MUST be one of: "tank", "healing", or "dps"
       - If the user is asking about Best-in-Slot (BiS) gear for a class/spec/role, use the bisScraperTool to fetch the latest BiS table from Icy-Veins and use that in your recommendations.
       - If the user is asking about a specific item or their current gear, use the wowCharacterGearTool to fetch the item or character data and use that in your decisions.
       - When calling the bisScraperTool, always pass the specId and role fields from the wowCharacterGearTool output if they are available, in addition to spec and class.
