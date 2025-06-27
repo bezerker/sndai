@@ -118,12 +118,40 @@ export class DiscordAdapter {
   }
 
   private static splitMessage(text: string, maxLength = 2000): string[] {
-    const result: string[] = [];
-    let current = 0;
-    while (current < text.length) {
-      result.push(text.slice(current, current + maxLength));
-      current += maxLength;
+    if (text.length <= maxLength) {
+      return [text];
     }
-    return result;
+
+    const chunks: string[] = [];
+    let current = 0;
+
+    while (current < text.length) {
+      const chunkEnd = Math.min(current + maxLength, text.length);
+
+      if (chunkEnd >= text.length) {
+        chunks.push(text.slice(current));
+        break;
+      }
+
+      let splitPos = text.lastIndexOf(' ', chunkEnd);
+      if (splitPos <= current) {
+        splitPos = text.lastIndexOf('\n', chunkEnd);
+      }
+
+      if (splitPos <= current) {
+        // No space or newline found in the chunk, so we have to split the word
+        splitPos = chunkEnd;
+      }
+
+      chunks.push(text.slice(current, splitPos));
+      current = splitPos;
+
+      // Skip the space/newline character for the next chunk
+      if (text[current] === ' ' || text[current] === '\n') {
+        current++;
+      }
+    }
+
+    return chunks;
   }
 } 
