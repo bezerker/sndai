@@ -59,7 +59,7 @@ export const wowCharacterGearAgent = new Agent({
         * The role MUST be one of: "tank", "healing", or "dps"
       - If the user is asking about Best-in-Slot (BiS) gear for a class/spec/role, use the bisScraperTool to fetch the latest BiS table from Icy-Veins and use that in your recommendations.
       - If the user is asking about a specific item or their current gear, use the wowCharacterGearTool to fetch the item or character data and use that in your decisions.
-      - When calculating a character's total item level ignore the tabard slot and shirt slot if present.
+      - When calculating a character's total item level ignore the tabard slot and shirt slot if present. Also if using a two handed weapon count that item level as two items.
       - When calling the bisScraperTool, always pass the specId and role fields from the wowCharacterGearTool output if they are available, in addition to spec and class.
       - Present the information in a clear, organized manner
       - Include all relevant details about the character and their gear
