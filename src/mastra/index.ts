@@ -7,12 +7,18 @@ import { DiscordAdapter } from './adapters/discord';
 if (process.env.DISCORD_ENABLED === 'true') {
   const discordAdapter = new DiscordAdapter();
 
+  // Resolve temperature from environment with default
+  const defaultTemperature = 0.5;
+  const envTemperature = process.env.DISCORD_TEMPERATURE;
+  const parsedTemperature = envTemperature !== undefined ? Number(envTemperature) : defaultTemperature;
+  const temperature = Number.isFinite(parsedTemperature) ? parsedTemperature : defaultTemperature;
+
   discordAdapter.setMessageHandler(async (message) => {
     const cleanMessage = message.content.replace(`<@${message.client.user?.id}>`, '').trim();
     const result = await wowCharacterGearAgent.generate(cleanMessage, {
       resourceId: message.author.id,
       threadId: message.channel.id,
-      // temperature: 0.2,
+      temperature,
     });
     const cleanedText = result.text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     return cleanedText;
