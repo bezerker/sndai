@@ -20,6 +20,10 @@ WORKDIR /app
 COPY --from=builder /app/.mastra /app/.mastra
 COPY --from=builder /app/src /app/src
 
+# Ensure native modules match target arch by installing deps in output
+RUN cd /app/.mastra/output \
+  && npm ci --omit=dev
+
 # Drop privileges
 RUN chown -R node:node /app
 USER node
