@@ -2,8 +2,8 @@
 
 ARG NODE_VERSION=24
 
-# Build stage: install deps and bundle with Mastra
-FROM node:${NODE_VERSION}-alpine AS builder
+# Build stage: install deps and bundle with Mastra (Debian slim for glibc)
+FROM node:${NODE_VERSION}-bookworm-slim AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -11,8 +11,8 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# Runtime stage: run the bundled output
-FROM node:${NODE_VERSION}-alpine AS runtime
+# Runtime stage: run the bundled output (Debian slim for glibc)
+FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 
 # Environment you will commonly set at runtime
 #   MODEL_PROVIDER=openai|ollama (default: openai)
