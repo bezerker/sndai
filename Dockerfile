@@ -32,10 +32,8 @@ COPY --from=builder /app/.mastra /app/.mastra
 # Keep src path so relative SQLite URL (file:../../memory.db) resolves to /app/memory.db
 COPY --from=builder /app/src /app/src
 
-# Ensure non-root runtime and writable app dir
-RUN addgroup -g 1001 -S nodegrp \
-  && adduser -S node -u 1001 -G nodegrp \
-  && chown -R node:node /app
+# Ensure non-root runtime and writable app dir (node user exists in base image)
+RUN chown -R node:node /app
 USER node
 
 # Set working directory so '../../memory.db' -> '/app/memory.db'
