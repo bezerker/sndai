@@ -131,7 +131,8 @@ export const bisScraperTool = createTool({
       }
     }
     if (!roleNorm) {
-      throw new Error(`Role could not be determined for specId: ${specIdNum}. Please provide a valid specId or role.`);
+      throw new Error(`Role could not be determined for specId: ${specId && specId.trim() !== '' ? specId : '(empty)'}.
+Please provide a valid specId or role.`);
     }
     return scrapeIcyVeins(spec, cls, roleNorm);
   },
