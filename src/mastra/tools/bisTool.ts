@@ -125,7 +125,7 @@ export const bisScraperTool = createTool({
     if (!roleNorm && specIdNum !== undefined) {
       roleNorm = getRoleForSpecId(specIdNum);
       if (!roleNorm) {
-        console.warn(`[BiS Debug] Could not auto-determine role for specId: ${specId}`);
+        console.warn(`[BiS Debug] Could not auto-determine role for specId: ${specIdNum}`);
       } else {
         console.log(`[BiS Debug] Auto-filled role for specId ${specIdNum}: ${roleNorm}`);
       }
