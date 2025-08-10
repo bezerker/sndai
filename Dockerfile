@@ -1,24 +1,31 @@
 # syntax=docker/dockerfile:1
 
 ARG NODE_VERSION=24
-FROM node:${NODE_VERSION}-bookworm-slim
 
+# Build stage (bundles app with Mastra for target arch)
+FROM node:${NODE_VERSION}-bookworm-slim AS builder
 WORKDIR /app
-
-# Install deps
 COPY package.json package-lock.json ./
 RUN npm ci
-
-# Copy source
 COPY tsconfig.json ./
 COPY src ./src
+RUN npm run build
 
-# Environment
+# Runtime stage (no instrumentation)
+FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ENV NODE_ENV=production
+WORKDIR /app
 
-# Non-root
+# Copy bundled output and src (for memory.db relative path)
+COPY --from=builder /app/.mastra /app/.mastra
+COPY --from=builder /app/src /app/src
+
+# Drop privileges
 RUN chown -R node:node /app
 USER node
 
-# Run: build inside the container for the current arch, then start
-CMD ["bash", "-lc", "npm run build && node --import=.mastra/output/instrumentation.mjs .mastra/output/index.mjs"]
+# Set working directory so 'file:../../memory.db' -> '/app/memory.db'
+WORKDIR /app/src/mastra
+
+# Start the bundled app without instrumentation
+CMD ["node", "../../.mastra/output/index.mjs"]
