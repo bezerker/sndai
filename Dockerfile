@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
 
-ARG NODE_VERSION=22
+ARG NODE_VERSION=24
 FROM node:${NODE_VERSION}-alpine AS runtime
 
 WORKDIR /app
 
 # Install only production deps
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy source
 COPY tsconfig.json ./
@@ -29,9 +29,9 @@ USER node
 #   BRAVE_API_KEY=... (for web search MCP server)
 ENV NODE_ENV=production
 
-# For runtime, set working directory so that the app's relative
-# SQLite path (file:../../memory.db) resolves to /app/memory.db
-WORKDIR /app/src/mastra/agents
+## Runtime working directory so that the app's relative
+## SQLite path (file:../../memory.db) resolves to /app/memory.db
+WORKDIR /app/src/mastra
 
 # Default command runs the TypeScript entry via ts-node ESM loader
-CMD ["node", "--loader", "ts-node/esm", "../../src/mastra/index.ts"]
+CMD ["node", "--loader", "ts-node/esm", "index.ts"]
