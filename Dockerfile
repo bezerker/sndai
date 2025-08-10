@@ -1,21 +1,18 @@
 # syntax=docker/dockerfile:1
 
 ARG NODE_VERSION=24
-FROM node:${NODE_VERSION}-alpine AS runtime
 
+# Build stage: install deps and bundle with Mastra
+FROM node:${NODE_VERSION}-alpine AS builder
 WORKDIR /app
-
-# Install only production deps
 COPY package.json package-lock.json ./
 RUN npm ci
-
-# Copy source
 COPY tsconfig.json ./
 COPY src ./src
+RUN npm run build
 
-# Ensure non-root runtime
-RUN chown -R node:node /app
-USER node
+# Runtime stage: run the bundled output
+FROM node:${NODE_VERSION}-alpine AS runtime
 
 # Environment you will commonly set at runtime
 #   MODEL_PROVIDER=openai|ollama (default: openai)
@@ -29,9 +26,20 @@ USER node
 #   BRAVE_API_KEY=... (for web search MCP server)
 ENV NODE_ENV=production
 
-## Runtime working directory so that the app's relative
-## SQLite path (file:../../memory.db) resolves to /app/memory.db
+# Copy only what is needed to run
+WORKDIR /app
+COPY --from=builder /app/.mastra /app/.mastra
+# Keep src path so relative SQLite URL (file:../../memory.db) resolves to /app/memory.db
+COPY --from=builder /app/src /app/src
+
+# Ensure non-root runtime and writable app dir
+RUN addgroup -g 1001 -S nodegrp \
+  && adduser -S node -u 1001 -G nodegrp \
+  && chown -R node:node /app
+USER node
+
+# Set working directory so '../../memory.db' -> '/app/memory.db'
 WORKDIR /app/src/mastra
 
-# Default command runs the TypeScript entry via ts-node ESM loader
-CMD ["node", "--loader", "ts-node/esm", "index.ts"]
+# Run the bundled app as recommended by Mastra CLI
+CMD ["node", "--import=../../.mastra/output/instrumentation.mjs", "../../.mastra/output/index.mjs"]
