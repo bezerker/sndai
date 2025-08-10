@@ -100,8 +100,9 @@ export const bisScraperTool = createTool({
   inputSchema: z.object({
     spec: z.string(),
     cls: z.string(),
-    specId: z.preprocess(val => typeof val === 'string' ? parseInt(val, 10) : val, z.number().optional()),
-    role: z.preprocess(val => typeof val === 'string' ? val.toLowerCase() : val, z.enum(["tank", "healing", "dps"]).optional()),
+    // Keep required in JSON schema; allow blank strings at runtime
+    specId: z.string().describe('Specialization ID as string; pass empty string if unknown'),
+    role: z.string().describe('Role: tank | healing | dps; pass empty string if unknown'),
   }),
   outputSchema: z.object({
     spec: z.string(),
@@ -111,19 +112,28 @@ export const bisScraperTool = createTool({
     bis: z.record(z.string(), z.string()),
   }),
   execute: async ({ context }) => {
-    let { spec, cls, specId, role } = context;
-    console.log('[BiS Debug] Received input:', { spec, cls, specId, role, typeofSpecId: typeof specId, typeofRole: typeof role });
-    if (!role && specId !== undefined) {
-      role = getRoleForSpecId(specId);
-      if (!role) {
-        console.warn(`[BiS Debug] Could not auto-determine role for specId: ${specId}`);
+    let { spec, cls, specId, role } = context as {
+      spec: string;
+      cls: string;
+      specId: string; // may be empty
+      role: string; // may be empty
+    };
+    // Normalize and coerce types for internal logic
+    const specIdNum = specId && specId.trim() !== '' ? parseInt(specId, 10) : undefined;
+    let roleNorm = role && role.trim() !== '' ? role.toLowerCase() as 'tank' | 'healing' | 'dps' : undefined;
+    console.log('[BiS Debug] Received input:', { spec, cls, specId: specIdNum, role: roleNorm, typeofSpecId: typeof specIdNum, typeofRole: typeof roleNorm });
+    if (!roleNorm && specIdNum !== undefined) {
+      roleNorm = getRoleForSpecId(specIdNum);
+      if (!roleNorm) {
+        console.warn(`[BiS Debug] Could not auto-determine role for specId: ${specIdNum}`);
       } else {
-        console.log(`[BiS Debug] Auto-filled role for specId ${specId}: ${role}`);
+        console.log(`[BiS Debug] Auto-filled role for specId ${specIdNum}: ${roleNorm}`);
       }
     }
-    if (!role) {
-      throw new Error(`Role could not be determined for specId: ${specId}. Please provide a valid specId or role.`);
+    if (!roleNorm) {
+      throw new Error(`Role could not be determined for specId: ${specId && specId.trim() !== '' ? specId : '(empty)'}.
+Please provide a valid specId or role.`);
     }
-    return scrapeIcyVeins(spec, cls, role);
+    return scrapeIcyVeins(spec, cls, roleNorm);
   },
 });
