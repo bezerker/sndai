@@ -1,0 +1,76 @@
+# Default values for sndai.
+# Override these in a values file or via --set.
+
+image:
+  repository: your-registry/sndai
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  readOnlyRootFilesystem: false
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+service:
+  enabled: false
+  type: ClusterIP
+  port: 8080
+
+# Ingress for exposing a (future) HTTP endpoint. Disabled by default.
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: sndai.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Persistent volume to keep memory.db if desired
+persistence:
+  enabled: false
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+  storageClassName: ""
+
+# Feature flags / env
+env:
+  # Core runtime
+  NODE_ENV: production
+  MODEL_PROVIDER: openai # or "ollama"
+  DISCORD_ENABLED: "false" # set to "true" to run discord bot
+  # Optional tuning
+  DISCORD_TEMPERATURE: "0.5"
+  OPENAI_MODEL: gpt-4o
+  OPENAI_BASE_URL: https://api.openai.com/v1
+  OLLAMA_MODEL: llama3.1:latest
+
+# Secret values (mounted as env from Secret)
+secrets:
+  OPENAI_API_KEY: ""
+  BRAVE_API_KEY: ""
+  BLIZZARD_CLIENT_ID: ""
+  BLIZZARD_CLIENT_SECRET: ""
+  DISCORD_BOT_TOKEN: ""
+  DISCORD_CLIENT_ID: ""
+
+# Extra environment variables as plain-text (ConfigMap)
+extraEnv: {}
