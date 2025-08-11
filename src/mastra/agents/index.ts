@@ -17,8 +17,38 @@ const memory = new Memory({
     connectionUrl: 'file:../../memory.db',
   }),
   options: {
-    lastMessages: 40,
-    semanticRecall: false,
+    lastMessages: parseInt(process.env.MEMORY_LAST_MESSAGES || '100', 10), // Recent conversation history (optimized for GPT-5-nano)
+    semanticRecall: {
+      topK: parseInt(process.env.MEMORY_SEMANTIC_TOP_K || '5', 10), // Number of similar messages to retrieve (optimized for GPT-5-nano)
+      messageRange: parseInt(process.env.MEMORY_SEMANTIC_RANGE || '3', 10), // Context around each match (optimized for GPT-5-nano)
+      scope: 'resource', // Search across all threads for this user
+    },
+    workingMemory: {
+      enabled: process.env.MEMORY_WORKING_MEMORY_ENABLED !== 'false', // Default: true
+      scope: (process.env.MEMORY_WORKING_MEMORY_SCOPE as 'thread' | 'resource') || 'resource', // Default: resource
+      template: process.env.MEMORY_WORKING_MEMORY_TEMPLATE || `
+# WoW Player Profile
+
+## Character Info
+- **Character Name**: 
+- **Server**: 
+- **Region**: 
+- **Class**: 
+- **Main Spec**: 
+- **Current Item Level**: 
+
+## Game Preferences
+- **Preferred Game Mode**: [Mythic+, Raid, PvP, World Content]
+- **Content Difficulty**: [Normal, Heroic, Mythic, etc.]
+- **Goals**: [Gear upgrades, BiS completion, etc.]
+
+## Session Context
+- **Last BiS Check**: 
+- **Current Gear Discussion**: 
+- **Open Questions**: 
+- **Next Steps**: 
+`,
+    },
     threads: {
       generateTitle: true,
     }

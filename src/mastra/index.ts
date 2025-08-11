@@ -15,11 +15,24 @@ if (process.env.DISCORD_ENABLED === 'true') {
 
   discordAdapter.setMessageHandler(async (message) => {
     const cleanMessage = message.content.replace(`<@${message.client.user?.id}>`, '').trim();
-    const result = await wowCharacterGearAgent.generate(cleanMessage, {
-      resourceId: message.author.id,
-      threadId: message.channel.id,
+    const userId = message.author.id;
+    const userContext = discordAdapter.getUserContext(userId);
+    
+    // Create a more descriptive thread ID for better memory organization
+    const threadId = `discord-user-${userId}-${message.author.username}`;
+    
+    // Add user context to the message for better personalization
+    let enhancedMessage = cleanMessage;
+    if (userContext && userContext.conversationCount > 1) {
+      enhancedMessage = `[User has ${userContext.conversationCount} previous interactions] ${cleanMessage}`;
+    }
+    
+    const result = await wowCharacterGearAgent.generate(enhancedMessage, {
+      resourceId: userId,
+      threadId: threadId,
       temperature,
     });
+    
     const cleanedText = result.text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     return cleanedText;
   });

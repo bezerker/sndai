@@ -13,6 +13,13 @@ export class DiscordAdapter {
   private client: Client;
   private config: DiscordConfig;
   private messageHandler?: (message: Message) => Promise<string>;
+  private userContexts: Map<string, { lastInteraction: Date; conversationCount: number }> = new Map();
+  
+  // Memory cleanup configuration - 6 months for WoW gear bot use case
+  // This allows users to reference conversations across multiple patches and seasons
+  // Can be overridden with DISCORD_MEMORY_CLEANUP_DAYS environment variable
+  private static readonly MEMORY_CLEANUP_INTERVAL_DAYS = parseInt(process.env.DISCORD_MEMORY_CLEANUP_DAYS || '180', 10); // Default: 6 months
+  private static readonly MEMORY_CLEANUP_RUN_INTERVAL_MS = DiscordAdapter.MEMORY_CLEANUP_INTERVAL_DAYS * 24 * 60 * 60 * 1000; // Run every N months
 
   constructor() {
     // Load config from environment variables
@@ -65,14 +72,16 @@ export class DiscordAdapter {
       debugLog('[DiscordAdapter]', 'Bot mentioned:', mentioned);
       if (mentioned) {
         try {
-          // Remove the bot mention from the message
-          // (leave as is, but pass the full message to handler)
+          // Track user interaction
+          this.trackUserInteraction(message.author.id);
+          
+          // Show typing indicator if the channel is a text channel
+          if (message.channel instanceof TextChannel) {
+            await message.channel.sendTyping();
+          }
+          
+          // Get response from the agent
           if (this.messageHandler) {
-            // Show typing indicator if the channel is a text channel
-            if (message.channel instanceof TextChannel) {
-              await message.channel.sendTyping();
-            }
-            // Get response from the agent
             const response = await this.messageHandler(message);
             debugLog('[DiscordAdapter]', 'Agent response:', response);
             // Split and send the response in chunks if needed
@@ -99,13 +108,52 @@ export class DiscordAdapter {
     this.messageHandler = handler;
   }
 
+  private trackUserInteraction(userId: string) {
+    const now = new Date();
+    const userContext = this.userContexts.get(userId);
+    
+    if (userContext) {
+      userContext.lastInteraction = now;
+      userContext.conversationCount++;
+    } else {
+      this.userContexts.set(userId, {
+        lastInteraction: now,
+        conversationCount: 1
+      });
+    }
+  }
+
+  public getUserContext(userId: string) {
+    return this.userContexts.get(userId);
+  }
+
   public async start() {
     try {
       await this.client.login(this.config.token);
+      this.startMemoryCleanup(); // Start cleanup timer
     } catch (error) {
       console.error('Failed to start Discord bot:', error);
       throw error;
     }
+  }
+
+  private startMemoryCleanup() {
+    // Clean up old user contexts every 6 months
+    setInterval(() => {
+      const cutoff = new Date(Date.now() - DiscordAdapter.MEMORY_CLEANUP_INTERVAL_DAYS * 24 * 60 * 60 * 1000);
+      let cleanedCount = 0;
+      
+      for (const [userId, context] of this.userContexts.entries()) {
+        if (context.lastInteraction < cutoff) {
+          this.userContexts.delete(userId);
+          cleanedCount++;
+        }
+      }
+      
+      if (cleanedCount > 0) {
+        console.log(`[DiscordAdapter] Memory cleanup: removed ${cleanedCount} inactive user contexts (older than ${DiscordAdapter.MEMORY_CLEANUP_INTERVAL_DAYS} days)`);
+      }
+    }, DiscordAdapter.MEMORY_CLEANUP_RUN_INTERVAL_MS);
   }
 
   public async stop() {
