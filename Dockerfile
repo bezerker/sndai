@@ -1,45 +1,41 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.6
 
 ARG NODE_VERSION=24
 
-# Build stage (bundles app with Mastra for target arch)
-FROM node:${NODE_VERSION}-bookworm-slim AS builder
+# Build stage: bundle the app with Mastra
+FROM --platform=$BUILDPLATFORM node:${NODE_VERSION}-bookworm-slim AS builder
 WORKDIR /app
+
 COPY package.json package-lock.json ./
 RUN npm ci
+
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# Runtime stage (no instrumentation)
-FROM node:${NODE_VERSION}-bookworm-slim AS runtime
+# Runtime stage: minimal image that runs the built agent
+FROM --platform=$TARGETPLATFORM node:${NODE_VERSION}-bookworm-slim AS runtime
+ARG TARGETPLATFORM
+ARG TARGETARCH
 ENV NODE_ENV=production
 WORKDIR /app
 
-# Copy bundled output and src (for memory.db relative path)
+# Copy bundled output and src (src kept so relative db path resolves)
 COPY --from=builder /app/.mastra /app/.mastra
 COPY --from=builder /app/src /app/src
 
-# Ensure native modules match target arch by installing deps in output,
-# plus the platform-specific tokenizer package
+# Install production deps for the built output
 RUN set -eux; \
   cd /app/.mastra/output; \
   npm ci --omit=dev; \
-  arch="$(dpkg --print-architecture)"; \
-  case "$arch" in \
-    arm64) pkg='@anush008/tokenizers-linux-arm64-gnu' ;; \
-    amd64) pkg='@anush008/tokenizers-linux-x64-gnu' ;; \
-    *) pkg='' ;; \
-  esac; \
-  if [ -n "$pkg" ]; then npm install --omit=dev "$pkg"; fi; \
   npm cache clean --force
 
 # Drop privileges
 RUN chown -R node:node /app
 USER node
 
-# Set working directory so 'file:../../memory.db' -> '/app/memory.db'
+# Ensure the working dir matches code's relative db path 'file:../../memory.db'
 WORKDIR /app/src/mastra
 
-# Start the bundled app without instrumentation
+# Start the bundled app
 CMD ["node", "../../.mastra/output/index.mjs"]
