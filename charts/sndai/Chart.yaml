@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sndai
+version: 0.1.0
+description: Helm chart for sndai (WoW gear assistant)
+type: application
+appVersion: "1.0.0"
