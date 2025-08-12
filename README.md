@@ -26,13 +26,13 @@ This project is the official AI-powered agent for the **Stand and Deliver** guil
 
 ## Installation
 
-1) Install dependencies:
+1. Install dependencies:
 
    ```bash
    npm install
    ```
 
-2) Set environment variables (create a `.env` file or export in your shell):
+2. Set environment variables (create a `.env` file or export in your shell):
 
 - Blizzard API (required for character lookups)
   - `BLIZZARD_CLIENT_ID`
@@ -51,17 +51,23 @@ This project is the official AI-powered agent for the **Stand and Deliver** guil
   - `DISCORD_ENABLED` = `true` to enable the bot
   - `DISCORD_BOT_TOKEN`
   - `DISCORD_CLIENT_ID`
+  - `DISCORD_TEMPERATURE` (optional; default: `0.5`)
+- Agent behavior (optional)
+  - `AGENT_MAX_STEPS` (optional; maximum number of execution steps for the agent, defaults to no limit)
+  - `MEMORY_MAX_MESSAGES` (optional; maximum number of messages to remember per thread, defaults to `40`)
 
-3) (Optional) If using a custom memory DB location, update `src/mastra/storage.ts` (defaults to `memory.db` in the repo root).
+3. (Optional) If using a custom memory DB location, update `src/mastra/storage.ts` (defaults to `memory.db` in the repo root).
 
 ## Usage
 
 - Development:
+
   ```bash
   npm run dev
   ```
 
 - Production build:
+
   ```bash
   npm run build
   ```
@@ -89,6 +95,8 @@ The agent is exposed via the Mastra framework and can be integrated into a Mastr
 
 - All configuration is handled via environment variables
 - Memory is stored locally in `memory.db` (LibSQL) in the project root by default
+- Agent execution can be limited by setting `AGENT_MAX_STEPS` to control the maximum number of steps the agent can take during a single generation call
+- Memory retention can be controlled with `MEMORY_MAX_MESSAGES` to set how many messages are remembered per conversation thread
 
 ## Project Structure
 

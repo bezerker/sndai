@@ -13,12 +13,16 @@ if (process.env.DISCORD_ENABLED === 'true') {
   const parsedTemperature = envTemperature !== undefined ? Number(envTemperature) : defaultTemperature;
   const temperature = Number.isFinite(parsedTemperature) ? parsedTemperature : defaultTemperature;
 
+  // Resolve maxSteps from environment with default
+  const maxSteps = process.env.AGENT_MAX_STEPS ? parseInt(process.env.AGENT_MAX_STEPS, 10) : undefined;
+
   discordAdapter.setMessageHandler(async (message) => {
     const cleanMessage = message.content.replace(`<@${message.client.user?.id}>`, '').trim();
     const result = await wowCharacterGearAgent.generate(cleanMessage, {
       resourceId: message.author.id,
-      threadId: message.channel.id,
+      threadId: `discord-${message.author.id}`,
       temperature,
+      ...(maxSteps && { maxSteps }),
     });
     const cleanedText = result.text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     return cleanedText;

@@ -9,6 +9,9 @@ import { mcp } from '../mcp';
 import { wowCharacterGearTool, webSearchTool, fetchUrlContentTool } from '../tools';
 import { bisScraperTool } from '../tools/bisTool';
 
+// Get memory configuration from environment variables
+const memoryMaxMessages = process.env.MEMORY_MAX_MESSAGES ? parseInt(process.env.MEMORY_MAX_MESSAGES, 10) : 40;
+
 // Initialize memory storage in main directory due to deprecation.
 const memory = new Memory({
   storage,
@@ -17,7 +20,7 @@ const memory = new Memory({
     connectionUrl: 'file:../../memory.db',
   }),
   options: {
-    lastMessages: 40,
+    lastMessages: memoryMaxMessages,
     semanticRecall: false,
     threads: {
       generateTitle: true,
@@ -35,6 +38,9 @@ const openaiBaseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
 const openaiApiKey = process.env.OPENAI_API_KEY || 'lm-studio';
 
 const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.1:latest';
+
+// Get maxSteps from environment variable, default to undefined (no limit)
+const maxSteps = process.env.AGENT_MAX_STEPS ? parseInt(process.env.AGENT_MAX_STEPS, 10) : undefined;
 
 const model = modelProvider === 'openai' 
   ? createOpenAI({
@@ -56,7 +62,7 @@ export const wowCharacterGearAgent = new Agent({
 
       Conversational basics:
       - Ask for character name and server; default the region to US if not specified
-      - When giving recommendations, ask for the user’s primary game mode (Mythic+, Raid, PvP, etc.)
+      - When giving recommendations, ask for the user's primary game mode (Mythic+, Raid, PvP, etc.)
 
       Gear / BiS workflow:
       - Do not provide BiS by default on character lookups
@@ -79,7 +85,7 @@ export const wowCharacterGearAgent = new Agent({
         * Mention upcoming PTR changes only if relevant
 
       Presentation:
-      - Provide clear, organized answers; if a character isn’t found, suggest fixes
+      - Provide clear, organized answers; if a character isn't found, suggest fixes
       - Remember previous lookups and conversation context to improve suggestions
     `,
   model,
@@ -91,4 +97,5 @@ export const wowCharacterGearAgent = new Agent({
     fetchUrlContentTool,
   },
   memory: memory,
+  defaultGenerateOptions: maxSteps ? { maxSteps } : undefined,
 });
