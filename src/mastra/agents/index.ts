@@ -17,37 +17,17 @@ const memory = new Memory({
     connectionUrl: 'file:../../memory.db',
   }),
   options: {
-    lastMessages: parseInt(process.env.MEMORY_LAST_MESSAGES || '100', 10), // Recent conversation history (optimized for GPT-5-nano)
+    lastMessages: Math.max(1, Math.min(200, parseInt(process.env.MEMORY_LAST_MESSAGES || '20', 10))), // Reduced to restore accuracy
     semanticRecall: {
-      topK: parseInt(process.env.MEMORY_SEMANTIC_TOP_K || '5', 10), // Number of similar messages to retrieve (optimized for GPT-5-nano)
-      messageRange: parseInt(process.env.MEMORY_SEMANTIC_RANGE || '3', 10), // Context around each match (optimized for GPT-5-nano)
+      topK: Math.max(1, Math.min(20, parseInt(process.env.MEMORY_SEMANTIC_TOP_K || '1', 10))), // Reduced to minimize interference
+      messageRange: Math.max(0, Math.min(10, parseInt(process.env.MEMORY_SEMANTIC_RANGE || '0', 10))), // Reduced to minimize interference
       scope: 'resource', // Search across all threads for this user
     },
     workingMemory: {
-      enabled: process.env.MEMORY_WORKING_MEMORY_ENABLED !== 'false', // Default: true
-      scope: (process.env.MEMORY_WORKING_MEMORY_SCOPE as 'thread' | 'resource') || 'resource', // Default: resource
-      template: process.env.MEMORY_WORKING_MEMORY_TEMPLATE || `
-# WoW Player Profile
-
-## Character Info
-- **Character Name**: 
-- **Server**: 
-- **Region**: 
-- **Class**: 
-- **Main Spec**: 
-- **Current Item Level**: 
-
-## Game Preferences
-- **Preferred Game Mode**: [Mythic+, Raid, PvP, World Content]
-- **Content Difficulty**: [Normal, Heroic, Mythic, etc.]
-- **Goals**: [Gear upgrades, BiS completion, etc.]
-
-## Session Context
-- **Last BiS Check**: 
-- **Current Gear Discussion**: 
-- **Open Questions**: 
-- **Next Steps**: 
-`,
+      enabled: false, // Disabled to restore accuracy and prevent memory update chatter
+      scope: 'resource',
+      template: process.env.MEMORY_WORKING_MEMORY_TEMPLATE || 
+        '# WoW Player Profile\n\n## Character Info\n- **Character Name**: \n- **Server**: \n- **Region**: \n- **Class**: \n- **Main Spec**: \n- **Current Item Level**: \n\n## Game Preferences\n- **Preferred Game Mode**: [Mythic+, Raid, PvP, World Content]\n- **Content Difficulty**: [Normal, Heroic, Mythic, etc.]\n- **Goals**: [Gear upgrades, BiS completion, etc.]\n\n## Session Context\n- **Last BiS Check**: \n- **Current Gear Discussion**: \n- **Open Questions**: \n- **Next Steps**: ',
     },
     threads: {
       generateTitle: true,
@@ -80,13 +60,15 @@ export const wowCharacterGearAgent = new Agent({
       - Look up characters and gear, then give recommendations
       - Answer general WoW questions (classes/specs, dungeons/raids, Mythic+, PvP, professions, leveling, achievements, events, lore)
 
+      IMPORTANT: Never mention memory updates, learning, or remembering information. Focus only on providing accurate WoW information and gear recommendations.
+
       Scope and focus:
       - Stay on World of Warcraft topics; if a query drifts, clarify or steer back toward WoW
       - The current patch is 11.2; verify facts with up-to-date sources when uncertain
 
       Conversational basics:
       - Ask for character name and server; default the region to US if not specified
-      - When giving recommendations, ask for the user’s primary game mode (Mythic+, Raid, PvP, etc.)
+      - When giving recommendations, ask for the user's primary game mode (Mythic+, Raid, PvP, etc.)
 
       Gear / BiS workflow:
       - Do not provide BiS by default on character lookups
@@ -109,8 +91,9 @@ export const wowCharacterGearAgent = new Agent({
         * Mention upcoming PTR changes only if relevant
 
       Presentation:
-      - Provide clear, organized answers; if a character isn’t found, suggest fixes
-      - Remember previous lookups and conversation context to improve suggestions
+      - Provide clear, organized answers; if a character isn't found, suggest fixes
+      - Focus on current, accurate information from tools and web search
+      - Do not reference past conversations or mention memory updates
     `,
   model,
   tools: { 

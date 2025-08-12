@@ -63,6 +63,9 @@ This project is the official AI-powered agent for the **Stand and Deliver** guil
   - `MEMORY_WORKING_MEMORY_SCOPE` (default: resource) - 'thread' or 'resource' scoped memory
   - `MEMORY_WORKING_MEMORY_TEMPLATE` (optional) - Custom template for user profiles
 
+- Agent Configuration (optional; tune for complex operations)
+  - `AGENT_MAX_STEPS` (default: 10) - Maximum tool usage steps for complex queries
+
 ## Memory Configuration Guide
 
 ### **Recommended Settings by LLM Context Window:**
@@ -107,15 +110,40 @@ MODEL_PROVIDER=openai
 OPENAI_MODEL=gpt-5-nano
 OPENAI_API_KEY=your_key_here
 
-# Optimized for 400K token context window
-MEMORY_LAST_MESSAGES=100
-MEMORY_SEMANTIC_TOP_K=5
-MEMORY_SEMANTIC_RANGE=3
+# Memory configuration - Optimized for accuracy (working memory disabled)
+MEMORY_LAST_MESSAGES=20        # Reduced for accuracy
+MEMORY_SEMANTIC_TOP_K=1        # Minimal semantic recall for accuracy
+MEMORY_SEMANTIC_RANGE=0        # No context around matches for accuracy
+MEMORY_WORKING_MEMORY_ENABLED=false  # Disabled to restore accuracy
 
-# Working memory for persistent user profiles
-MEMORY_WORKING_MEMORY_ENABLED=true
-MEMORY_WORKING_MEMORY_SCOPE=resource
+# Agent configuration for stability
+AGENT_MAX_STEPS=15
 ```
+
+## Memory Configuration Status
+
+### **⚠️ Working Memory Disabled for Accuracy**
+
+**Why:** The working memory system was interfering with the agent's core functionality:
+
+- **Incorrect data retrieval** from memory vs. fresh tool calls
+- **Memory update chatter** in responses
+- **Reduced accuracy** compared to the original implementation
+
+**Current Configuration:**
+
+- **Working Memory**: `disabled` (prevents memory update chatter)
+- **Semantic Recall**: `minimal` (1 match, 0 context to reduce interference)
+- **Recent Messages**: `20` (enough for conversation flow, not enough to cause overflow)
+- **Focus**: **Fresh, accurate data** from tools and web search
+
+### **🎯 What This Restores:**
+
+- **✅ Accurate character lookups** from Blizzard API
+- **✅ Current BiS data** from Icy-Veins scraping
+- **✅ Fresh web search results** for latest information
+- **✅ No memory update chatter** in responses
+- **✅ Focus on WoW gear recommendations** not memory management
 
 ## Working Memory Benefits
 
@@ -172,7 +200,155 @@ Your last check showed you at 485 ilvl - any upgrades since then?"
 - **BiS Tracking**: Remembers when you last checked for upgrades
 - **Session Continuity**: Picks up where you left off in previous conversations
 
-3. (Optional) If using a custom memory DB location, update `src/mastra/storage.ts` (defaults to `memory.db` in the repo root).
+## Troubleshooting
+
+### **🚨 "Stream finished with reason tool-calls" Error**
+
+If you encounter this error in the Mastra playground:
+
+```
+Error: Stream finished with reason tool-calls, try increasing maxSteps
+```
+
+**Cause:** This happens when working memory is enabled because the agent needs to process the `updateWorkingMemory` tool call in addition to other tools.
+
+**Solution:** The Discord adapter automatically uses the `AGENT_MAX_STEPS` environment variable. For manual calls, pass `maxSteps`:
+
+```typescript
+// In your code or playground
+const response = await wowCharacterGearAgent.generate("Hello!", {
+  maxSteps: 10, // Allow up to 10 tool usage steps
+  resourceId: "user-123",
+  threadId: "conversation-456",
+});
+
+// Or use the environment variable
+process.env.AGENT_MAX_STEPS = "15";
+```
+
+**Environment Variable Configuration:**
+
+```bash
+# Set in your .env.development file
+AGENT_MAX_STEPS=15
+```
+
+**Recommended maxSteps values:**
+
+- **Basic queries**: `maxSteps: 5`
+- **Complex gear analysis**: `maxSteps: 10`
+- **Working memory + multiple tools**: `maxSteps: 15`
+
+**Note:** `maxSteps` is a parameter for the `generate()` method. The Discord adapter automatically uses `AGENT_MAX_STEPS` environment variable.
+
+### **🎮 Using in Mastra Playground:**
+
+When testing in the Mastra playground, you have two options:
+
+#### **Option 1: Set Environment Variable (Recommended)**
+
+```bash
+# In your .env.development file
+AGENT_MAX_STEPS=15
+```
+
+#### **Option 2: Modify Playground Code**
+
+If you're modifying the playground code directly, add maxSteps to your generate calls:
+
+```typescript
+const response = await wowCharacterGearAgent.generate("Hello!", {
+  maxSteps: 15,
+  resourceId: "test-user",
+  threadId: "test-thread",
+});
+```
+
+**Playground Tip:** The playground automatically loads environment variables, so setting `AGENT_MAX_STEPS=15` in your `.env.development` file should resolve the error.
+
+### **🚨 "TypeError: Error in input stream" Error**
+
+If you encounter this error after multiple queries:
+
+```
+TypeError: Error in input stream
+```
+
+**Real Cause: Memory Context Overflow After Multiple Tool Calls**
+
+This error typically occurs **after several successful queries** when:
+
+- **Memory context accumulates** with each tool call
+- **Working memory updates** add to the context
+- **Semantic recall** finds more relevant past messages
+- **Eventually hits LLM input processing limits**
+
+**Solutions (in order of effectiveness):**
+
+#### **1. Reduce Memory Context Size (Immediate Fix):**
+
+```bash
+# .env.development - Reduce context to prevent overflow
+MEMORY_LAST_MESSAGES=30        # Was 100 - too much for long conversations!
+MEMORY_SEMANTIC_TOP_K=2        # Was 5 - too many semantic matches!
+MEMORY_SEMANTIC_RANGE=1        # Was 3 - too much context per match!
+```
+
+#### **2. Memory Database Issues:**
+
+```bash
+# Check if memory.db exists and is accessible
+ls -la memory.db
+# If corrupted, delete and restart
+rm memory.db
+npm run dev
+```
+
+#### **3. Working Memory Template Issues:**
+
+```bash
+# Simplify working memory template temporarily
+MEMORY_WORKING_MEMORY_TEMPLATE="# User Profile\n- Name:\n- Server:"
+```
+
+#### **4. Environment Variable Conflicts:**
+
+```bash
+# Ensure all memory variables are set correctly
+MEMORY_LAST_MESSAGES=30        # Reduced for stability
+MEMORY_SEMANTIC_TOP_K=2        # Reduced for stability
+MEMORY_SEMANTIC_RANGE=1        # Reduced for stability
+MEMORY_WORKING_MEMORY_ENABLED=true
+MEMORY_WORKING_MEMORY_SCOPE=resource
+AGENT_MAX_STEPS=15
+```
+
+#### **5. Memory Configuration Validation:**
+
+The agent now validates memory settings with safer defaults:
+
+- `lastMessages`: 1-200 (default: 30) ← **Reduced from 100**
+- `semanticRecall.topK`: 1-20 (default: 2) ← **Reduced from 5**
+- `semanticRecall.messageRange`: 0-10 (default: 1) ← **Reduced from 3**
+
+#### **6. Debug Mode:**
+
+Enable detailed logging to identify the issue:
+
+```bash
+DEBUG=true npm run dev
+```
+
+**Quick Fix Sequence:**
+
+1. **Stop the server** (`Ctrl+C`)
+2. **Update environment variables** (reduce memory context sizes)
+3. **Delete memory.db** (`rm memory.db`) if still having issues
+4. **Restart server** (`npm run dev`)
+5. **Test with simple query** first
+6. **Monitor memory usage** during extended conversations
+
+7. (Optional) If using a custom memory DB location, update `src/mastra/storage.ts` (defaults to `memory.db` in the repo root).
 
 ## Usage
 
