@@ -98,6 +98,57 @@ The agent is exposed via the Mastra framework and can be integrated into a Mastr
 - Agent execution can be limited by setting `AGENT_MAX_STEPS` to control the maximum number of steps the agent can take during a single generation call
 - Memory retention can be controlled with `MEMORY_MAX_MESSAGES` to set how many messages are remembered per conversation thread
 
+### Memory configuration
+
+This project uses Mastra's memory system combining:
+
+- Basic conversation history (last N messages)
+- Semantic recall (vector search over past messages)
+- Working memory (persistent user profile/scratchpad)
+
+When calling the agent, always pass both a resource and a thread identifier so memory can be scoped:
+
+```ts
+await wowCharacterGearAgent.generate("...", {
+  memory: { resource: "user_123", thread: "conversation_abc" },
+});
+```
+
+Environment variables:
+
+- `MEMORY_MAX_MESSAGES`: number of recent messages to include (default: `40`)
+- `MEMORY_SEMANTIC_RECALL_ENABLED`: enable/disable semantic recall (default: `true`)
+- `MEMORY_SEMANTIC_RECALL_TOP_K`: number of similar messages to retrieve (default: `5`)
+- `MEMORY_SEMANTIC_RECALL_MESSAGE_RANGE`: surrounding messages per match (default: `3`)
+- `MEMORY_SEMANTIC_RECALL_SCOPE`: `thread` or `resource` (default: `resource`)
+- `MEMORY_WORKING_MEMORY_ENABLED`: enable/disable working memory (default: `true`)
+- `MEMORY_WORKING_MEMORY_SCOPE`: `thread` or `resource` (default: `resource`)
+- `MEMORY_WORKING_MEMORY_TEMPLATE`: optional custom template string for working memory (default: WoW‑focused template in code)
+
+Example `.env` snippet:
+
+```env
+# Basic history
+MEMORY_MAX_MESSAGES=40
+
+# Semantic recall
+MEMORY_SEMANTIC_RECALL_ENABLED=true
+MEMORY_SEMANTIC_RECALL_TOP_K=5
+MEMORY_SEMANTIC_RECALL_MESSAGE_RANGE=3
+MEMORY_SEMANTIC_RECALL_SCOPE=resource
+
+# Working memory
+MEMORY_WORKING_MEMORY_ENABLED=true
+MEMORY_WORKING_MEMORY_SCOPE=resource
+# MEMORY_WORKING_MEMORY_TEMPLATE="# Custom Template\n- Field 1:\n- Field 2:"
+```
+
+Notes:
+
+- Resource‑scoped memory requires a compatible store; this project uses LibSQL which supports it.
+- Semantic recall requires embeddings and a vector DB; this project uses FastEmbed and LibSQLVector already configured.
+- To disable semantic recall, set `MEMORY_SEMANTIC_RECALL_ENABLED=false`.
+
 ## Project Structure
 
 - `src/mastra/agents/`: Agent implementation and logic

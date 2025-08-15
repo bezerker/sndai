@@ -12,7 +12,44 @@ import { bisScraperTool } from '../tools/bisTool';
 // Get memory configuration from environment variables
 const memoryMaxMessages = process.env.MEMORY_MAX_MESSAGES ? parseInt(process.env.MEMORY_MAX_MESSAGES, 10) : 40;
 
-// Initialize memory storage in main directory due to deprecation.
+// Memory configuration from environment variables
+const semanticRecallEnabled = process.env.MEMORY_SEMANTIC_RECALL_ENABLED !== 'false';
+const semanticRecallTopK = process.env.MEMORY_SEMANTIC_RECALL_TOP_K ? parseInt(process.env.MEMORY_SEMANTIC_RECALL_TOP_K, 10) : 5;
+const semanticRecallMessageRange = process.env.MEMORY_SEMANTIC_RECALL_MESSAGE_RANGE ? parseInt(process.env.MEMORY_SEMANTIC_RECALL_MESSAGE_RANGE, 10) : 3;
+const semanticRecallScope = (process.env.MEMORY_SEMANTIC_RECALL_SCOPE as 'thread' | 'resource') || 'resource';
+
+const workingMemoryEnabled = process.env.MEMORY_WORKING_MEMORY_ENABLED !== 'false';
+const workingMemoryScope = (process.env.MEMORY_WORKING_MEMORY_SCOPE as 'thread' | 'resource') || 'resource';
+
+// WoW-specific working memory template
+const defaultWoWTemplate = `# WoW Player Profile
+
+## Character Information
+- **Character Name**: 
+- **Server/Region**: 
+- **Favorite Classes**: 
+- **Current Main**: 
+
+## Playstyle & Preferences
+- **Primary Game Mode**: [Mythic+, Raid, PvP, Casual]
+- **Gear Focus**: [BiS, Good Enough, Transmog]
+- **Difficulty Preference**: [Easy, Normal, Heroic, Mythic]
+
+## Current Goals & Context
+- **Current Goals**: 
+- **Last Character Lookup**: 
+- **Recent Topics Discussed**: 
+- **Open Questions**: 
+
+## User Preferences
+- **Communication Style**: [Detailed, Concise, Technical, Casual]
+- **Information Depth**: [Basic, Standard, Advanced]
+- **Update Frequency**: [Always Fresh, Cached OK]`;
+
+// Custom working memory template from environment (if provided)
+const workingMemoryTemplate = process.env.MEMORY_WORKING_MEMORY_TEMPLATE || defaultWoWTemplate;
+
+// Initialize enhanced memory with semantic recall and working memory
 const memory = new Memory({
   storage,
   embedder: fastembed,
@@ -21,7 +58,16 @@ const memory = new Memory({
   }),
   options: {
     lastMessages: memoryMaxMessages,
-    semanticRecall: false,
+    semanticRecall: semanticRecallEnabled ? {
+      topK: semanticRecallTopK,
+      messageRange: semanticRecallMessageRange,
+      scope: semanticRecallScope,
+    } : false,
+    workingMemory: workingMemoryEnabled ? {
+      enabled: true,
+      scope: workingMemoryScope,
+      template: workingMemoryTemplate,
+    } : undefined,
     threads: {
       generateTitle: true,
     }
@@ -49,20 +95,32 @@ const model = modelProvider === 'openai'
   })(openaiModel)
   : ollama(ollamaModel);
 
+
+
 export const wowCharacterGearAgent = new Agent({
   name: 'WoW Character Gear Agent',
   instructions: `
-      You are a helpful World of Warcraft assistant. You can:
+      You are a helpful World of Warcraft assistant with enhanced memory capabilities. You can:
       - Look up characters and gear, then give recommendations
       - Answer general WoW questions (classes/specs, dungeons/raids, Mythic+, PvP, professions, leveling, achievements, events, lore)
+      - Remember user preferences and character details across conversations using working memory
+      - Recall relevant information from past conversations using semantic memory
+
+      Memory and Context Management:
+      - Use working memory to track and update user preferences, character details, and playstyle information
+      - Leverage semantic recall to find relevant past conversations and build upon previous discussions
+      - Always check working memory first for user details before asking for information
+      - Update working memory when users share new preferences, character details, or goals
+      - Use semantic recall to reference previous character lookups, gear discussions, or WoW questions
 
       Scope and focus:
       - Stay on World of Warcraft topics; if a query drifts, clarify or steer back toward WoW
       - The current patch is 11.2; verify facts with up-to-date sources when uncertain
 
       Conversational basics:
-      - Ask for character name and server; default the region to US if not specified
-      - When giving recommendations, ask for the user's primary game mode (Mythic+, Raid, PvP, etc.)
+      - Check working memory for character name and server; if missing, ask the user for them. If region is not specified, default to US.
+      - For recommendations, check working memory for the user's primary game mode (Mythic+, Raid, PvP, etc.) and preferred difficulty; if missing, ask for them.
+      - Use semantic recall to reference previous character lookups and build upon past recommendations.
 
       Gear / BiS workflow:
       - Do not provide BiS by default on character lookups
@@ -86,7 +144,9 @@ export const wowCharacterGearAgent = new Agent({
 
       Presentation:
       - Provide clear, organized answers; if a character isn't found, suggest fixes
-      - Remember previous lookups and conversation context to improve suggestions
+      - Reference working memory for personalized recommendations based on user preferences
+      - Use semantic recall to provide continuity and build upon previous conversations
+      - Update working memory with new information learned during the conversation
     `,
   model,
   tools: { 
@@ -99,3 +159,5 @@ export const wowCharacterGearAgent = new Agent({
   memory: memory,
   defaultGenerateOptions: maxSteps ? { maxSteps } : undefined,
 });
+
+

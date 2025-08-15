@@ -1,11 +1,12 @@
 {
   "name": "sndai",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:memory": "vitest run tests/memory-system.test.ts",
     "dev": "mastra dev",
     "build": "mastra build"
   },
