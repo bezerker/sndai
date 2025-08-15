@@ -38,7 +38,13 @@ jobs:
           echo "release tag: ${{ steps.get_tag.outputs.tag }}"
           if [ "$pkg_version" != "${{ steps.get_tag.outputs.tag }}" ]; then
             echo "Package version ($pkg_version) does not match release tag (${{ steps.get_tag.outputs.tag }})"
-            echo "::error::Package version ($pkg_version) does not match release tag (${{ steps.get_tag.outputs.tag }})"
+          # Strip leading 'v' from the tag if present
+          tag_version="${{ steps.get_tag.outputs.tag }}"
+          tag_version_stripped="${tag_version#v}"
+          echo "release tag: $tag_version (normalized: $tag_version_stripped)"
+          if [ "$pkg_version" != "$tag_version_stripped" ]; then
+            echo "Package version ($pkg_version) does not match release tag ($tag_version)"
+            echo "::error::Package version ($pkg_version) does not match release tag ($tag_version)"
             exit 1
           fi
 
