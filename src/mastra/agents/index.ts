@@ -88,6 +88,8 @@ const ollamaModel = process.env.OLLAMA_MODEL || 'llama3.1:latest';
 // Get maxSteps from environment variable, default to undefined (no limit)
 const maxSteps = process.env.AGENT_MAX_STEPS ? parseInt(process.env.AGENT_MAX_STEPS, 10) : undefined;
 
+export const agentMaxSteps = maxSteps;
+
 const model = modelProvider === 'openai' 
   ? createOpenAI({
     baseURL: openaiBaseUrl,
@@ -157,7 +159,7 @@ export const wowCharacterGearAgent = new Agent({
     fetchUrlContentTool,
   },
   memory: memory,
-  defaultGenerateOptions: maxSteps ? { maxSteps } : undefined,
+  defaultGenerateOptions: agentMaxSteps ? { maxSteps: agentMaxSteps } : undefined,
 });
 
 

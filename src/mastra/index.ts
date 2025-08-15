@@ -1,6 +1,6 @@
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
-import { wowCharacterGearAgent } from './agents';
+import { wowCharacterGearAgent, agentMaxSteps } from './agents';
 import { storage } from './storage';
 import { DiscordAdapter } from './adapters/discord';
 
@@ -13,8 +13,8 @@ if (process.env.DISCORD_ENABLED === 'true') {
   const parsedTemperature = envTemperature !== undefined ? Number(envTemperature) : defaultTemperature;
   const temperature = Number.isFinite(parsedTemperature) ? parsedTemperature : defaultTemperature;
 
-  // Resolve maxSteps from environment with default
-  const maxSteps = process.env.AGENT_MAX_STEPS ? parseInt(process.env.AGENT_MAX_STEPS, 10) : undefined;
+  // Use shared agentMaxSteps resolved in agents module
+  const maxSteps = agentMaxSteps;
 
   discordAdapter.setMessageHandler(async (message) => {
     const cleanMessage = message.content.replace(`<@${message.client.user?.id}>`, '').trim();
