@@ -1,0 +1,66 @@
+name: Build and push Docker image
+
+on:
+  release:
+    types: [published]
+
+env:
+  IMAGE: bezerker/sndai
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node (for extracting package.json version)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Get release tag
+        id: get_tag
+        run: |
+          echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+
+      - name: Validate package.json version matches release tag
+        run: |
+          pkg_version=$(node -pe "require('./package.json').version")
+          echo "package.json version: $pkg_version"
+          echo "release tag: ${{ steps.get_tag.outputs.tag }}"
+          if [ "$pkg_version" != "${{ steps.get_tag.outputs.tag }}" ]; then
+            echo "Package version ($pkg_version) does not match release tag (${{ steps.get_tag.outputs.tag }})"
+          # Strip leading 'v' from the tag if present
+          tag_version="${{ steps.get_tag.outputs.tag }}"
+          tag_version_stripped="${tag_version#v}"
+          echo "release tag: $tag_version (normalized: $tag_version_stripped)"
+          if [ "$pkg_version" != "$tag_version_stripped" ]; then
+            echo "Package version ($pkg_version) does not match release tag ($tag_version)"
+            echo "::error::Package version ($pkg_version) does not match release tag ($tag_version)"
+            exit 1
+          fi
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.get_tag.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          file: ./Dockerfile
