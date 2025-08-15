@@ -1,0 +1,9 @@
+services:
+  sndai:
+    image: bezerker/sndai:1.0.3
+    env_file:
+      - .env
+    volumes:
+      - ./memory.db:/app/memory.db
+      - ./memory.db-wal:/app/memory.db-wal
+      - ./memory.db-shm:/app/memory.db-shm
