@@ -92,4 +92,38 @@ describe('wowCharacterGearTool', () => {
     const result = await wowCharacterGearTool.execute({ context: { characterName: 'bezvoker', serverName: 'korgath', region: 'us' } } as any);
     expect(result.role).toBe('tank');
   });
+
+  it('throws when OAuth token fetch fails', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (...args: FetchArgs) => {
+      const url = String(args[0]);
+      if (url.includes('/oauth/token')) {
+        return textResponse('unauthorized', false, 401);
+      }
+      return textResponse('not found', false, 404);
+    });
+
+    await expect(
+      wowCharacterGearTool.execute({ context: { characterName: 'bezvoker', serverName: 'korgath', region: 'us' } } as any)
+    ).rejects.toThrow(/Failed to get OAuth token/);
+  });
+
+  it('returns empty gear array when equipment API returns empty', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (...args: FetchArgs) => {
+      const url = String(args[0]);
+      if (url.includes('/oauth/token')) return jsonResponse({ access_token: mockToken });
+      if (url.includes('/profile/wow/character/') && !url.includes('/specializations') && !url.includes('/equipment')) {
+        return jsonResponse({
+          name: 'Bezvoker',
+          realm: { name: 'Korgath' },
+        });
+      }
+      if (url.includes('/specializations')) return jsonResponse({ active_specialization: { id: 1467, name: 'Devastation' } });
+      if (url.includes('/data/wow/playable-specialization/')) return jsonResponse({ role: { type: 'dps' } });
+      if (url.includes('/equipment')) return jsonResponse({ equipped_items: [] });
+      return textResponse('not found', false, 404);
+    });
+
+    const result = await wowCharacterGearTool.execute({ context: { characterName: 'bezvoker', serverName: 'korgath', region: 'us' } } as any);
+    expect(result.gear).toEqual([]);
+  });
 });

@@ -41,4 +41,12 @@ describe('bisScraperTool', () => {
     expect(result.bis).toEqual({ Head: 'Test Helm', Chest: 'Test Chest' });
     expect(result.source).toContain('icy-veins.com');
   });
+
+  it('throws when fetch fails (network error)', async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network down'));
+
+    await expect(
+      bisScraperTool.execute({ context: { spec: 'Devastation', cls: 'Evoker', specId: '1467', role: '' } } as any)
+    ).rejects.toThrow(/network down/);
+  });
 });
