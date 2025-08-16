@@ -58,6 +58,30 @@ This project is the official AI-powered agent for the **Stand and Deliver** guil
 
 3. (Optional) If using a custom memory DB location, update `src/mastra/storage.ts` (defaults to `memory.db` in the repo root).
 
+## Kubernetes / Helm
+
+This repository uses the Helm chart in `charts/sndai` as the single source of truth for Kubernetes manifests. The previous static `deploy/` manifests have been removed to avoid duplication and drift.
+
+To render the chart locally (produces standard Kubernetes YAML):
+
+```bash
+helm template sndai charts/sndai --values charts/sndai/values.yaml > rendered.yaml
+```
+
+To install into a cluster with Helm:
+
+```bash
+helm upgrade --install sndai charts/sndai --values charts/sndai/values.yaml
+```
+
+If you prefer `kubectl apply` you can render then apply:
+
+```bash
+helm template sndai charts/sndai --values charts/sndai/values.yaml | kubectl apply -f -
+```
+
+Tip: change values either by editing `charts/sndai/values.yaml` or passing `--set` to `helm`.
+
 ## Usage
 
 - Development:
