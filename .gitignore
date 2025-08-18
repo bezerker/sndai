@@ -1,4 +1,5 @@
 # Ignore local logs
+AGENTS.md
 wow_gear_debug.log
 output.txt
 node_modules
