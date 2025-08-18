@@ -25,4 +25,18 @@ describe('webSearchTool', () => {
       { title: 'B', link: 'https://b.com', snippet: 'b' },
     ]);
   });
+
+  it('returns empty array when search yields no results', async () => {
+    (googleSr.search as any).mockResolvedValue([]);
+    const results = await webSearchTool.execute({ context: { query: 'unlikely-query-xyz', limit: 5 } } as any);
+    expect(results).toEqual([]);
+  });
+
+  it('handles limit greater than available results', async () => {
+    (googleSr.search as any).mockResolvedValue([
+      { title: 'OnlyOne', link: 'https://one.com', description: 'one' }
+    ]);
+    const results = await webSearchTool.execute({ context: { query: 'wow', limit: 5 } } as any);
+    expect(results).toEqual([{ title: 'OnlyOne', link: 'https://one.com', snippet: 'one' }]);
+  });
 });

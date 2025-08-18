@@ -37,4 +37,12 @@ describe('fetchUrlContentTool', () => {
     const result = await fetchUrlContentTool.execute({ context: { url: 'https://nope.com' } } as any);
     expect(result).toEqual({ error: 'Could not extract content.' });
   });
+
+  it('returns error when extractor throws', async () => {
+    (extract as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('boom'));
+
+  const result = await fetchUrlContentTool.execute({ context: { url: 'https://explode.com' } } as any);
+  // Implementation catches extractor errors and returns a generic 'Could not extract content.'
+  expect(result).toEqual({ error: 'Could not extract content.' });
+  });
 });

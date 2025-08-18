@@ -32,7 +32,7 @@ This project is the official AI-powered agent for the **Stand and Deliver** guil
    npm install
    ```
 
-2. Set environment variables (create a `.env` file or export in your shell):
+2. Set environment variables (use `.env.development` for local dev or export in your shell):
 
 - Blizzard API (required for character lookups)
   - `BLIZZARD_CLIENT_ID`
@@ -113,7 +113,9 @@ The agent is exposed via the Mastra framework and can be integrated into a Mastr
 - Tools Used:
   - `wowCharacterGearTool`: Fetches character and gear data from Blizzard API
   - `bisScraperTool`: Scrapes BiS gear tables from Icy-Veins
-  - Web search via MCP (Brave)
+  - `web-search`: Lightweight Google-based search (no API key)
+  - `fetch-url-content`: Extracts article content from a URL
+  - Web search via MCP (Brave) when available
 
 ## Configuration
 
@@ -184,7 +186,14 @@ Notes:
 
 ## Testing
 
-See `tests/README.md` for Vitest-based instructions, commands, and mocking notes. The default `npm test` script is a placeholder.
+Run the Vitest suites:
+
+- `npm test`: runs the full test suite once
+- `npm run test:watch`: watch mode
+- `npm run test:memory`: runs only memory-system tests
+- Coverage: `npx vitest run --coverage`
+
+Tests mock external services and network calls for fast, isolated runs.
 
 ## License
 
