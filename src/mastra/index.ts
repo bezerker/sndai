@@ -3,6 +3,7 @@ import { PinoLogger } from '@mastra/loggers';
 import { wowCharacterGearAgent, agentMaxSteps } from './agents';
 import { storage } from './storage';
 import { DiscordAdapter } from './adapters/discord';
+import { prepareLayeredMemory, rememberAfterResponse } from './memoryLayer';
 
 if (process.env.DISCORD_ENABLED === 'true') {
   const discordAdapter = new DiscordAdapter();
@@ -18,13 +19,18 @@ if (process.env.DISCORD_ENABLED === 'true') {
 
   discordAdapter.setMessageHandler(async (message) => {
     const cleanMessage = message.content.replace(`<@${message.client.user?.id}>`, '').trim();
+    const layered = await prepareLayeredMemory(message);
     const result = await wowCharacterGearAgent.generate(cleanMessage, {
-      resourceId: message.author.id,
-      threadId: `discord-${message.author.id}`,
+      memory: {
+        resource: layered.memory.resource,
+        thread: layered.memory.thread,
+      },
+      context: layered.context,
       temperature,
       ...(maxSteps && { maxSteps }),
     });
     const cleanedText = result.text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    await rememberAfterResponse(message, cleanMessage, cleanedText);
     return cleanedText;
   });
 
