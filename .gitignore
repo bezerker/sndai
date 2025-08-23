@@ -7,6 +7,7 @@ dist
 .mastra
 .env.development
 .env
+.env.test
 *.db
 *.db-*
 .DS_Store
