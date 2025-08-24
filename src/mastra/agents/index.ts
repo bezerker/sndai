@@ -21,30 +21,21 @@ const semanticRecallScope = (process.env.MEMORY_SEMANTIC_RECALL_SCOPE as 'thread
 const workingMemoryEnabled = process.env.MEMORY_WORKING_MEMORY_ENABLED !== 'false';
 const workingMemoryScope = (process.env.MEMORY_WORKING_MEMORY_SCOPE as 'thread' | 'resource') || 'thread';
 
-// WoW-specific working memory template
-const defaultWoWTemplate = `# WoW Player Profile
+// Working memory template limited to non-identifying, shared conversation context
+const defaultWoWTemplate = `# Conversation Context Scratchpad
 
-## Character Information
-- **Character Name**: 
-- **Server/Region**: 
-- **Favorite Classes**: 
-- **Current Main**: 
+## Recent Topics
+- 
 
-## Playstyle & Preferences
-- **Primary Game Mode**: [Mythic+, Raid, PvP, Casual]
-- **Gear Focus**: [BiS, Good Enough, Transmog]
-- **Difficulty Preference**: [Easy, Normal, Heroic, Mythic]
+## Stories / References To Reuse
+- 
 
-## Current Goals & Context
-- **Current Goals**: 
-- **Last Character Lookup**: 
-- **Recent Topics Discussed**: 
-- **Open Questions**: 
+## Open Questions / Follow-ups
+- 
 
-## User Preferences
-- **Communication Style**: [Detailed, Concise, Technical, Casual]
-- **Information Depth**: [Basic, Standard, Advanced]
-- **Update Frequency**: [Always Fresh, Cached OK]`;
+## Notes (non-identifying)
+- Keep this section free of character names, servers, regions, roles, specs, or classes.
+- Summarize insights or context that benefits follow-up discussion for anyone in this channel/thread.`;
 
 // Custom working memory template from environment (if provided)
 const workingMemoryTemplate = process.env.MEMORY_WORKING_MEMORY_TEMPLATE || defaultWoWTemplate;
@@ -105,24 +96,23 @@ export const wowCharacterGearAgent = new Agent({
       You are a helpful World of Warcraft assistant with enhanced memory capabilities. You can:
       - Look up characters and gear, then give recommendations
       - Answer general WoW questions (classes/specs, dungeons/raids, Mythic+, PvP, professions, leveling, achievements, events, lore)
-      - Remember user preferences and character details across conversations using working memory
-      - Recall relevant information from past conversations using semantic memory
+      - Recall user-specific details (character, server/region, role/spec/class, preferred game mode) via semantic recall of that user's past messages
+      - Use working memory only for non-identifying conversation context (topics, stories, open questions)
 
       Memory and Context Management:
-      - Use working memory to track and update user preferences, character details, and playstyle information
-      - Leverage semantic recall to find relevant past conversations and build upon previous discussions
-      - Always check working memory first for user details before asking for information
-      - Update working memory when users share new preferences, character details, or goals
-      - Use semantic recall to reference previous character lookups, gear discussions, or WoW questions
+      - Do NOT write user identity to working memory. Never store character names, servers/regions, roles, specs, classes, or game modes in working memory
+      - Use semantic recall to reference previous character lookups, gear discussions, or WoW questions for the current resourceId
+      - If identity details are unknown via semantic recall, ask the current user directly
+      - Update working memory with non-identifying context only (topics, stories to reuse, unresolved questions)
 
       Scope and focus:
       - Stay on World of Warcraft topics; if a query drifts, clarify or steer back toward WoW
       - The current patch is 11.2; verify facts with up-to-date sources when uncertain
 
       Conversational basics:
-      - Check working memory for character name and server; if missing, ask the user for them. If region is not specified, default to US.
-      - For recommendations, check working memory for the user's primary game mode (Mythic+, Raid, PvP, etc.) and preferred difficulty; if missing, ask for them.
-      - Use semantic recall to reference previous character lookups and build upon past recommendations.
+      - Check semantic recall for character name, server, region, class/spec/role, and preferred game mode. If missing, ask for them. If region is not specified, default to US.
+      - For recommendations, prefer identity details found via semantic recall; do not mirror them into working memory.
+      - Use semantic recall to build upon past recommendations and character lookups.
 
       Gear / BiS workflow:
       - Do not provide BiS by default on character lookups

@@ -103,7 +103,8 @@ describe('memoryLayer helpers', () => {
     for (const res of [guildRes, chanRes]) {
       expect(res?.metadata?.rollingSummary).toBeDefined();
       const sum = String(res.metadata.rollingSummary);
-      expect(sum).toContain('User: I prefer Mythic+ and BiS for my rogue');
+      // Only assistant text is persisted in shared scope summary
+      expect(sum).not.toContain('User:');
       expect(sum).toContain('Assistant: Sure, here are BiS pointers.');
       const topics = res.metadata.topics as string[];
       expect(topics).toEqual(expect.arrayContaining(['mythic+', 'bis', 'rogue']));
@@ -125,7 +126,8 @@ describe('memoryLayer helpers', () => {
 
     await memoryLayer.rememberAfterResponse(message, 'Thread talks Mythic+', 'ack');
     const threadRes = resources.get('discord:thread:T1')!;
-    expect(threadRes?.metadata?.rollingSummary).toContain('User: Thread talks Mythic+');
+    // Only assistant text is persisted
+    expect(String(threadRes?.metadata?.rollingSummary)).toContain('Assistant: ack');
     expect((threadRes.metadata.topics as string[])).toEqual(expect.arrayContaining(['mythic+']));
   });
 

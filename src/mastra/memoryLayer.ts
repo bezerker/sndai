@@ -73,7 +73,7 @@ async function loadResource(resourceId: string): Promise<null | { workingMemory?
   return { workingMemory: res.workingMemory as string | null, metadata: res.metadata };
 }
 
-async function saveResource(resourceId: string, { workingMemory, metadata }: { workingMemory?: string; metadata?: Record<string, unknown> }) {
+async function saveResource(resourceId: string, { workingMemory, metadata }: { workingMemory?: string; metadata?: any }) {
   await storage.updateResource({ resourceId, ...(workingMemory !== undefined ? { workingMemory } : {}), ...(metadata ? { metadata } : {}) });
 }
 
@@ -99,7 +99,22 @@ function appendSummary(prev: string | undefined, userText: string, assistantText
   const combined = [prev || '', `User: ${userText}`.trim(), assistantText ? `Assistant: ${assistantText}` : '']
     .filter(Boolean)
     .join('\n');
-  // collapse whitespace and cap length
+  const collapsed = combined.replace(/\n{3,}/g, '\n\n');
+  if (collapsed.length <= MAX_SUMMARY_LENGTH) return collapsed;
+  return collapsed.slice(collapsed.length - MAX_SUMMARY_LENGTH);
+}
+
+// Replace first/second-person references for shared scope memory so identity isn't implied
+function sanitizeForSharedContext(text: string): string {
+  let t = sanitizeText(text);
+  t = t.replace(/\b(I'm|I\sam|I've|I'd|me|my|mine|I)\b/gi, 'the assistant');
+  t = t.replace(/\b(you\'re|you\sare|you\'ve|you\'d|you|your|yours)\b/gi, 'the user');
+  return t;
+}
+
+function appendSharedSummary(prev: string | undefined, assistantText?: string): string {
+  const assistantLine = assistantText ? `Assistant: ${sanitizeForSharedContext(assistantText)}` : '';
+  const combined = [prev || '', assistantLine].filter(Boolean).join('\n');
   const collapsed = combined.replace(/\n{3,}/g, '\n\n');
   if (collapsed.length <= MAX_SUMMARY_LENGTH) return collapsed;
   return collapsed.slice(collapsed.length - MAX_SUMMARY_LENGTH);
@@ -195,7 +210,8 @@ export async function updateScopeRollingMemory(opts: {
   const topics = extractTopics(`${opts.userText}\n${opts.assistantText || ''}`);
   await saveScopeMemory(opts.scope, opts.scopeId, prev => ({
     type: opts.scope,
-    rollingSummary: appendSummary(prev?.rollingSummary, opts.userText, opts.assistantText),
+    // Only persist assistant text (sanitized) in shared scope summaries to avoid tying identity to shared context
+    rollingSummary: appendSharedSummary(prev?.rollingSummary, opts.assistantText),
     topics: dedupe([...(prev?.topics || []), ...topics]) || [],
     expiresAt,
     updatedAt: nowIso(),
@@ -226,6 +242,7 @@ function buildSystemContextText(params: {
 }): string | null {
   const lines: string[] = [];
   lines.push('[Discord Layered Memory Context]');
+  lines.push('Note: Guild/Channel/Thread context is shared across users. Do not infer user identity from these sections.');
   if (params.user.aliases.length || params.user.characters.length || params.user.battleTag) {
     lines.push('User Profile:');
     if (params.user.battleTag) lines.push(`- BattleTag: ${params.user.battleTag}`);
