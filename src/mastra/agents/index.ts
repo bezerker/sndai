@@ -19,7 +19,7 @@ const semanticRecallMessageRange = process.env.MEMORY_SEMANTIC_RECALL_MESSAGE_RA
 const semanticRecallScope = (process.env.MEMORY_SEMANTIC_RECALL_SCOPE as 'thread' | 'resource') || 'resource';
 
 const workingMemoryEnabled = process.env.MEMORY_WORKING_MEMORY_ENABLED !== 'false';
-const workingMemoryScope = (process.env.MEMORY_WORKING_MEMORY_SCOPE as 'thread' | 'resource') || 'resource';
+const workingMemoryScope = (process.env.MEMORY_WORKING_MEMORY_SCOPE as 'thread' | 'resource') || 'thread';
 
 // WoW-specific working memory template
 const defaultWoWTemplate = `# WoW Player Profile
