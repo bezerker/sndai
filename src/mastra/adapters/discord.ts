@@ -74,19 +74,26 @@ export class DiscordAdapter {
           // Remove the bot mention from the message
           // (leave as is, but pass the full message to handler)
           if (this.messageHandler) {
-            // Show typing indicator if the channel is a text channel
+            // Maintain typing indicator while processing the message
+            let stopTyping: (() => void) | undefined;
             if (message.channel instanceof TextChannel) {
-              await message.channel.sendTyping();
+              stopTyping = this.startTypingLoop(message.channel);
             }
-            // Get response from the agent
-            const response = await this.messageHandler(message);
-            debugLog('[DiscordAdapter]', 'Agent response:', response);
-            // Split and send the response in chunks if needed
-            const chunks = DiscordAdapter.splitMessage(response);
-            for (const chunk of chunks) {
-              await message.reply(chunk);
+
+            try {
+              // Get response from the agent
+              const response = await this.messageHandler(message);
+              debugLog('[DiscordAdapter]', 'Agent response:', response);
+              // Split and send the response in chunks if needed
+              const chunks = DiscordAdapter.splitMessage(response);
+              for (const chunk of chunks) {
+                await message.reply(chunk);
+              }
+              debugLog('[DiscordAdapter]', 'Replied to message');
+            } finally {
+              // Ensure typing loop is stopped regardless of outcome
+              stopTyping?.();
             }
-            debugLog('[DiscordAdapter]', 'Replied to message');
           }
         } catch (error) {
           console.error('Error handling Discord message:', error);
@@ -121,6 +128,24 @@ export class DiscordAdapter {
       console.error('Error stopping Discord bot:', error);
       throw error;
     }
+  }
+
+  // Start a loop to keep the typing indicator active until stopped.
+  // Discord shows typing for ~10s; refresh every ~8s.
+  private startTypingLoop(channel: TextChannel): () => void {
+    let stopped = false;
+    // Kick off immediately; guard if mocks return non-promise
+    Promise.resolve((channel as any).sendTyping?.()).catch(() => {/* ignore typing errors */});
+    const interval: NodeJS.Timeout = setInterval(() => {
+      Promise.resolve((channel as any).sendTyping?.()).catch(() => {/* ignore typing errors */});
+    }, 8000);
+
+    return () => {
+      if (!stopped) {
+        clearInterval(interval);
+        stopped = true;
+      }
+    };
   }
 
   private static splitMessage(text: string, maxLength = 2000): string[] {
