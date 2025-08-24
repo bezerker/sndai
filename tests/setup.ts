@@ -10,6 +10,10 @@ beforeAll(() => {
   process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o';
   process.env.OPENAI_BASE_URL = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 
+  // Discord adapter test env
+  process.env.DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || 'test-discord-token';
+  process.env.DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || 'test-client-id';
+
   // Prevent writing debug logs to the repository during tests
   vi.spyOn(fs, 'appendFileSync').mockImplementation(() => {} as any);
 });

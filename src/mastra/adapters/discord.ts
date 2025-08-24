@@ -60,6 +60,12 @@ export class DiscordAdapter {
       // Ignore messages from bots
       if (message.author.bot) return;
 
+      // Ignore mass pings like @here and @everyone
+      if (message.mentions.everyone) {
+        debugLog('[DiscordAdapter]', 'Ignored due to @here/@everyone mention');
+        return;
+      }
+
       // Check if the bot was mentioned
       const mentioned = message.mentions.has(this.client.user!);
       debugLog('[DiscordAdapter]', 'Bot mentioned:', mentioned);
