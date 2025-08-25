@@ -129,6 +129,49 @@ describe('memoryLayer helpers', () => {
     expect((threadRes.metadata.topics as string[])).toEqual(expect.arrayContaining(['mythic+']));
   });
 
+  it('includes reply context from referenced message (user reply)', async () => {
+    const message: any = {
+      author: { id: 'U10' },
+      guild: { id: 'G10' },
+      channel: { id: 'C10', isThread: () => false },
+      client: { user: { id: 'BOT1' } },
+      reference: { messageId: 'M123' },
+      fetchReference: vi.fn(async () => ({
+        id: 'M123',
+        content: 'Original question about rogue BiS on Sargeras',
+        author: { id: 'U99' },
+      })),
+    };
+
+    const prepared = await memoryLayer.prepareLayeredMemory(message);
+    // Should include a reply context message
+    const replyCtx = prepared.context.find((m: any) => String(m.content || '').includes('[Reply Context]')) as any;
+    expect(replyCtx).toBeDefined();
+    expect(replyCtx.role).toBe('user');
+    expect(String(replyCtx.content)).toContain('rogue BiS');
+  });
+
+  it('includes reply context from referenced message (bot reply -> assistant role)', async () => {
+    const message: any = {
+      author: { id: 'U11' },
+      guild: { id: 'G11' },
+      channel: { id: 'C11', isThread: () => false },
+      client: { user: { id: 'BOT42' } },
+      reference: { messageId: 'M456' },
+      fetchReference: vi.fn(async () => ({
+        id: 'M456',
+        content: 'Here are BiS recommendations for Rogue Mythic+',
+        author: { id: 'BOT42' },
+      })),
+    };
+
+    const prepared = await memoryLayer.prepareLayeredMemory(message);
+    const replyCtx = prepared.context.find((m: any) => String(m.content || '').includes('[Reply Context]')) as any;
+    expect(replyCtx).toBeDefined();
+    expect(replyCtx.role).toBe('assistant');
+    expect(String(replyCtx.content)).toContain('BiS recommendations');
+  });
+
   it('user helpers add alias and character bindings (deduped)', async () => {
     await memoryLayer.addUserAlias('U2', 'Bez', 'G2');
     await memoryLayer.addUserAlias('U2', 'Bez', 'G2'); // duplicate

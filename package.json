@@ -47,5 +47,6 @@
     ],
     "testTimeout": 20000,
     "environment": "node"
-  }
+  },
+  "packageManager": "npm@11.3.0"
 }

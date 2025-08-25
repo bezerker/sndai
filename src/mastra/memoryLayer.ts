@@ -73,7 +73,7 @@ async function loadResource(resourceId: string): Promise<null | { workingMemory?
   return { workingMemory: res.workingMemory as string | null, metadata: res.metadata };
 }
 
-async function saveResource(resourceId: string, { workingMemory, metadata }: { workingMemory?: string; metadata?: Record<string, unknown> }) {
+async function saveResource(resourceId: string, { workingMemory, metadata }: { workingMemory?: string; metadata?: any }) {
   await storage.updateResource({ resourceId, ...(workingMemory !== undefined ? { workingMemory } : {}), ...(metadata ? { metadata } : {}) });
 }
 
@@ -261,6 +261,24 @@ export async function prepareLayeredMemory(message: Message): Promise<{ memory: 
   const scope = await getMergedScopeContext(message);
   const systemText = buildSystemContextText({ user, guild: scope.guild, channel: scope.channel, thread: scope.thread });
   const context: CoreMessage[] = systemText ? [{ role: 'system', content: systemText }] : [];
+
+  // If this message is a reply, include the referenced message content as immediate shared context
+  try {
+    const refId = (message as any)?.reference?.messageId as string | undefined;
+    if (refId && typeof message.fetchReference === 'function') {
+      const referenced = await (message as any).fetchReference();
+      if (referenced && referenced.content) {
+        const isFromBot = referenced.author?.id && message.client?.user?.id && referenced.author.id === message.client.user.id;
+        const role: 'user' | 'assistant' = isFromBot ? 'assistant' : 'user';
+        const refText = sanitizeText(String(referenced.content));
+        if (refText) {
+          context.push({ role, content: `[Reply Context] ${refText}` });
+        }
+      }
+    }
+  } catch {
+    // ignore reply context errors
+  }
   return {
     memory: { resource: userResource, thread: threadId },
     context,
