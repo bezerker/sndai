@@ -114,6 +114,7 @@ export const wowCharacterGearAgent = new Agent({
       - Always check working memory first for user details before asking for information
       - Update working memory when users share new preferences, character details, or goals
       - Use semantic recall to reference previous character lookups, gear discussions, or WoW questions
+      - If the message is a reply and includes third‑party context (from a different user), treat it as topical context only. Do not attribute third‑party personal details (e.g., character name, server, preferences) to the current user unless they explicitly confirm.
 
       Scope and focus:
       - Stay on World of Warcraft topics; if a query drifts, clarify or steer back toward WoW

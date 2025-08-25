@@ -268,11 +268,20 @@ export async function prepareLayeredMemory(message: Message): Promise<{ memory: 
     if (refId && typeof message.fetchReference === 'function') {
       const referenced = await (message as any).fetchReference();
       if (referenced && referenced.content) {
-        const isFromBot = referenced.author?.id && message.client?.user?.id && referenced.author.id === message.client.user.id;
-        const role: 'user' | 'assistant' = isFromBot ? 'assistant' : 'user';
+        const botId = message.client?.user?.id;
+        const referencedAuthorId = referenced.author?.id;
+        const isFromBot = !!botId && !!referencedAuthorId && referencedAuthorId === botId;
+        const isFromSameUser = !!referencedAuthorId && referencedAuthorId === message.author.id;
         const refText = sanitizeText(String(referenced.content));
         if (refText) {
-          context.push({ role, content: `[Reply Context] ${refText}` });
+          if (isFromBot) {
+            context.push({ role: 'assistant', content: `[Reply Context] ${refText}` });
+          } else if (isFromSameUser) {
+            context.push({ role: 'user', content: `[Reply Context] ${refText}` });
+          } else {
+            const authorTag = (referenced as any)?.author?.username || referencedAuthorId || 'unknown-user';
+            context.push({ role: 'system', content: `[Third‑party Reply Context from ${authorTag}] ${refText}\nNote: Treat this as topical context only. Do not attribute personal details to the current user unless they explicitly confirm.` });
+          }
         }
       }
     }

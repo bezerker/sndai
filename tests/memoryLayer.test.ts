@@ -139,7 +139,7 @@ describe('memoryLayer helpers', () => {
       fetchReference: vi.fn(async () => ({
         id: 'M123',
         content: 'Original question about rogue BiS on Sargeras',
-        author: { id: 'U99' },
+        author: { id: 'U10', username: 'SameUser' },
       })),
     };
 
@@ -170,6 +170,29 @@ describe('memoryLayer helpers', () => {
     expect(replyCtx).toBeDefined();
     expect(replyCtx.role).toBe('assistant');
     expect(String(replyCtx.content)).toContain('BiS recommendations');
+  });
+
+  it('includes third‑party reply context as system with caution', async () => {
+    const message: any = {
+      author: { id: 'U20' },
+      guild: { id: 'G20' },
+      channel: { id: 'C20', isThread: () => false },
+      client: { user: { id: 'BOT99' } },
+      reference: { messageId: 'M789' },
+      fetchReference: vi.fn(async () => ({
+        id: 'M789',
+        content: 'I play a rogue on Sargeras and prefer Mythic+',
+        author: { id: 'U21', username: 'AnotherUser' },
+      })),
+    };
+
+    const prepared = await memoryLayer.prepareLayeredMemory(message);
+    const replyCtx = prepared.context.find((m: any) => String(m.content || '').includes('[Third‑party Reply Context')) as any;
+    expect(replyCtx).toBeDefined();
+    expect(replyCtx.role).toBe('system');
+    const text = String(replyCtx.content);
+    expect(text).toContain('AnotherUser');
+    expect(text.toLowerCase()).toContain('topical context only');
   });
 
   it('user helpers add alias and character bindings (deduped)', async () => {
