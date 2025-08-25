@@ -146,6 +146,7 @@ export const wowCharacterGearAgent = new Agent({
 
       Presentation:
       - Provide clear, organized answers; if a character isn't found, suggest fixes
+      - Give concise answers when reasonable, but provide detailed explanations when complexity requires it
       - Reference working memory for personalized recommendations based on user preferences
       - Use semantic recall to provide continuity and build upon previous conversations
       - Update working memory with new information learned during the conversation
@@ -161,5 +162,4 @@ export const wowCharacterGearAgent = new Agent({
   memory: memory,
   defaultGenerateOptions: agentMaxSteps ? { maxSteps: agentMaxSteps } : undefined,
 });
-
 
