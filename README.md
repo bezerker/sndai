@@ -12,6 +12,7 @@ This project is the official AI-powered agent for the **Stand and Deliver** guil
 - Scrapes BiS gear tables from Icy-Veins for the latest recommendations
 - Provides context-aware, game-mode-specific advice (Mythic+, Raid, PvP, World Content)
 - Remembers previous lookups and conversations for improved suggestions (local vector memory)
+- Privacy: conversations and memory are scoped to the current user; the bot cannot access other users' conversations and will remind about this when relevant
 - Supports OpenAI and Ollama LLM providers
 - Integrates with Mastra MCP for tool orchestration and web search (Brave)
 - Optional Discord bot to interact in your guild server
@@ -174,6 +175,12 @@ Notes:
 - Resource‑scoped memory requires a compatible store; this project uses LibSQL which supports it.
 - Semantic recall requires embeddings and a vector DB; this project uses FastEmbed and LibSQLVector already configured.
 - To disable semantic recall, set `MEMORY_SEMANTIC_RECALL_ENABLED=false`.
+
+### Privacy & Scope
+
+- Per-user isolation: Conversations and memory are scoped to a single user (the resource). The agent cannot access or reference other users' conversations.
+- Resource mapping: Be consistent in how you set the resource identifier. In the Discord adapter, `resourceId` is `message.author.id`, and `threadId` is `discord-<author.id>` so memory persists across channels for the same user.
+- Reminder behavior: The system prompt instructs the agent to clarify this privacy scope only when relevant (e.g., when a user expects cross-user or cross-channel memory) to avoid unnecessary repetition.
 
 ## Project Structure
 
