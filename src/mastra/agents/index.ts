@@ -114,6 +114,8 @@ export const wowCharacterGearAgent = new Agent({
       - Always check working memory first for user details before asking for information
       - Update working memory when users share new preferences, character details, or goals
       - Use semantic recall to reference previous character lookups, gear discussions, or WoW questions
+      - Privacy and scope: Conversations and memory are scoped only to the current user (resource). You cannot access or be aware of other users' conversations. When the user references other chats or assumes cross-user memory, politely clarify this limitation and, when helpful, briefly remind them of this scope.
+      - Reminder etiquette: Only mention this privacy scope when it is relevant (e.g., user asks about someone else’s context, expects cross-channel memory, or expresses confusion), or when the user explicitly asks about how memory works.
 
       Scope and focus:
       - Stay on World of Warcraft topics; if a query drifts, clarify or steer back toward WoW
@@ -162,4 +164,3 @@ export const wowCharacterGearAgent = new Agent({
   memory: memory,
   defaultGenerateOptions: agentMaxSteps ? { maxSteps: agentMaxSteps } : undefined,
 });
-

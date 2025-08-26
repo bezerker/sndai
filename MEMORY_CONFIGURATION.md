@@ -10,6 +10,13 @@ Your agent now has three complementary memory layers that work together:
 2. **Semantic Recall**: Finds relevant past conversations using vector search
 3. **Working Memory**: Maintains persistent user profiles and preferences
 
+## Privacy & Scope
+
+- **Per‑User Isolation**: Conversations and memory are scoped to a single user (the "resource"). The agent cannot access, reference, or become aware of other users' conversations or data.
+- **What "resource" means**: A resource is the unique identifier you pass to the agent (e.g., in Discord we use `message.author.id`). All memory lookups and updates are keyed to this ID.
+- **Cross‑thread continuity**: With `scope: resource`, memory persists across all threads for the same user, but never across different users.
+- **User reminders**: The system prompt instructs the agent to politely remind users of this privacy scope when relevant (e.g., when someone expects cross‑user or cross‑channel memory), and to avoid over‑reminding otherwise.
+
 ## Environment Variables
 
 ### Basic Memory Settings
@@ -33,7 +40,7 @@ MEMORY_SEMANTIC_RECALL_MESSAGE_RANGE=3
 
 # Scope for semantic search (default: resource)
 # - 'thread': Search within current conversation only
-# - 'resource': Search across all user conversations (recommended for WoW agent)
+# - 'resource': Search across all conversations for the same user (recommended)
 MEMORY_SEMANTIC_RECALL_SCOPE=resource
 ```
 
@@ -45,7 +52,7 @@ MEMORY_WORKING_MEMORY_ENABLED=true
 
 # Scope for working memory (default: resource)
 # - 'thread': Memory isolated per conversation
-# - 'resource': Memory persists across all user conversations (recommended)
+# - 'resource': Memory persists across all conversations for the same user (recommended)
 MEMORY_WORKING_MEMORY_SCOPE=resource
 
 # Custom working memory template (optional)
@@ -65,7 +72,7 @@ MEMORY_WORKING_MEMORY_TEMPLATE="# Custom Template\n- Field 1:\n- Field 2:"
 ### 2. Semantic Recall (New)
 
 - **Purpose**: Finds relevant past conversations using AI embeddings
-- **Data**: Searches through all stored messages for semantic similarity
+- **Data**: Searches through the user's stored messages for semantic similarity (scoped by `resourceId`)
 - **Usage**: Retrieves contextually relevant information from past interactions
 - **Storage**: Uses `mastra_vectors` table for embeddings
 - **Example**: When user asks about "rogue gear," finds previous rogue discussions
@@ -75,7 +82,7 @@ MEMORY_WORKING_MEMORY_TEMPLATE="# Custom Template\n- Field 1:\n- Field 2:"
 - **Purpose**: Maintains persistent user profiles and preferences
 - **Data**: Structured information about user's WoW preferences
 - **Usage**: Provides personalized recommendations and context
-- **Storage**: `mastra_resources` table
+- **Storage**: `mastra_resources` table (keyed by `resourceId`)
 - **Example**: Remembers user's favorite classes, preferred difficulty, etc.
 
 ## Memory Flow Example
@@ -155,7 +162,7 @@ MEMORY_WORKING_MEMORY_SCOPE=thread
 ### Resource-Shared Configuration (Recommended)
 
 ```bash
-# Share memory across all user conversations
+# Share memory across all conversations for the same user
 MEMORY_SEMANTIC_RECALL_SCOPE=resource
 MEMORY_WORKING_MEMORY_SCOPE=resource
 ```
@@ -187,6 +194,7 @@ MEMORY_WORKING_MEMORY_SCOPE=resource
 1. Check that `resourceId` and `threadId` are provided in agent calls
 2. Verify environment variables are set correctly
 3. Check database permissions and file paths
+4. Ensure each user maps to a consistent `resourceId` (e.g., Discord `author.id`)
 
 ### Performance Issues
 
@@ -206,6 +214,11 @@ MEMORY_WORKING_MEMORY_SCOPE=resource
 - **Backward Compatibility**: Basic memory continues to work as before
 - **New Features**: Semantic recall and working memory are additive
 - **No Conflicts**: New features don't interfere with existing functionality
+
+## Implementation Notes
+
+- The agent prompt includes explicit guidance about privacy and scope so it clarifies limitations only when relevant.
+- In the Discord adapter, `resourceId` is set to the message author's ID and `threadId` is prefixed with `discord-<author.id>`, ensuring per‑user isolation across channels.
 
 ## Testing the Memory System
 
