@@ -22,8 +22,8 @@ Your agent now has three complementary memory layers that work together:
 ### Basic Memory Settings
 
 ```bash
-# Number of recent messages to include in context (default: 40)
-MEMORY_MAX_MESSAGES=40
+# Number of recent messages to include in context (default: 10)
+MEMORY_MAX_MESSAGES=10
 ```
 
 ### Semantic Recall Configuration
@@ -148,7 +148,7 @@ MEMORY_WORKING_MEMORY_ENABLED=true
 # Reduce semantic search overhead
 MEMORY_SEMANTIC_RECALL_TOP_K=3
 MEMORY_SEMANTIC_RECALL_MESSAGE_RANGE=2
-MEMORY_MAX_MESSAGES=20
+MEMORY_MAX_MESSAGES=10
 ```
 
 ### Thread-Isolated Configuration
@@ -184,7 +184,7 @@ MEMORY_WORKING_MEMORY_SCOPE=resource
 ### Optimization Tips
 
 - Use `MEMORY_SEMANTIC_RECALL_TOP_K=3` for faster responses
-- Set `MEMORY_MAX_MESSAGES=20` if conversation history is sufficient
+- Set `MEMORY_MAX_MESSAGES=10` if conversation history is sufficient
 - Consider `MEMORY_SEMANTIC_RECALL_SCOPE=thread` for high-traffic scenarios
 
 ## Troubleshooting

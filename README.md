@@ -55,7 +55,7 @@ This project is the official AI-powered agent for the **Stand and Deliver** guil
   - `DISCORD_TEMPERATURE` (optional; default: `0.5`)
 - Agent behavior (optional)
   - `AGENT_MAX_STEPS` (optional; maximum number of execution steps for the agent, defaults to no limit)
-  - `MEMORY_MAX_MESSAGES` (optional; maximum number of messages to remember per thread, defaults to `40`)
+  - `MEMORY_MAX_MESSAGES` (optional; maximum number of messages to remember per thread, defaults to `10`)
 
 3. (Optional) If using a custom memory DB location, update `src/mastra/storage.ts` (defaults to `memory.db` in the repo root).
 
@@ -143,7 +143,7 @@ await wowCharacterGearAgent.generate("...", {
 
 Environment variables:
 
-- `MEMORY_MAX_MESSAGES`: number of recent messages to include (default: `40`)
+- `MEMORY_MAX_MESSAGES`: number of recent messages to include (default: `10`)
 - `MEMORY_SEMANTIC_RECALL_ENABLED`: enable/disable semantic recall (default: `true`)
 - `MEMORY_SEMANTIC_RECALL_TOP_K`: number of similar messages to retrieve (default: `5`)
 - `MEMORY_SEMANTIC_RECALL_MESSAGE_RANGE`: surrounding messages per match (default: `3`)
@@ -156,7 +156,7 @@ Example `.env` snippet:
 
 ```env
 # Basic history
-MEMORY_MAX_MESSAGES=40
+MEMORY_MAX_MESSAGES=10
 
 # Semantic recall
 MEMORY_SEMANTIC_RECALL_ENABLED=true
