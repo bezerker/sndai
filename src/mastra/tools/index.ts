@@ -1,6 +1,5 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import fs from 'fs';
 import { extract } from '@extractus/article-extractor';
 // @ts-ignore
 import * as googleSr from 'google-sr';
@@ -148,7 +147,7 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
       throw new Error(`Failed to fetch specialization data: ${specResponse.statusText}\n${errorText}`);
     }
     const specData = await specResponse.json();
-    logDebug('Specialization API response: ' + JSON.stringify(specData, null, 2));
+    debugLog('Specialization API response: ' + JSON.stringify(specData, null, 2));
     let spec = 'Unknown';
     let specId: number | undefined = undefined;
     let role = 'Unknown';
@@ -158,38 +157,38 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
       spec = specData.active_specialization.name || 'Unknown';
       specId = specData.active_specialization.id;
       const specIdLocal = specId;
-      logDebug(`Parsed spec from active_specialization: ${spec} (id: ${specIdLocal})`);
+      debugLog(`Parsed spec from active_specialization: ${spec} (id: ${specIdLocal})`);
       // Try to get role from the API if not present
       try {
         const playableSpecUrl = `https://${region}.api.blizzard.com/data/wow/playable-specialization/${specIdLocal}?namespace=static-${region}&locale=en_US&access_token=${access_token}`;
-        logDebug('Fetching playable-specialization for role: ' + playableSpecUrl);
+        debugLog('Fetching playable-specialization for role: ' + playableSpecUrl);
         const playableSpecResponse = await fetch(playableSpecUrl);
         if (playableSpecResponse.ok) {
           const playableSpecData = await playableSpecResponse.json();
-          logDebug('Playable-specialization API response: ' + JSON.stringify(playableSpecData, null, 2));
+          debugLog('Playable-specialization API response: ' + JSON.stringify(playableSpecData, null, 2));
           if (playableSpecData.role && playableSpecData.role.type) {
             role = playableSpecData.role.type;
-            logDebug(`Parsed role from playable-specialization: ${role}`);
+            debugLog(`Parsed role from playable-specialization: ${role}`);
           } else if (specIdLocal !== undefined) {
             // Use static mapping if API doesn't provide role
             role = SPEC_ID_TO_ROLE[specIdLocal] || 'Unknown';
-            logDebug(`Role not found in API, using static mapping: ${role}`);
+            debugLog(`Role not found in API, using static mapping: ${role}`);
           }
         } else if (specIdLocal !== undefined) {
           // Use static mapping if API call fails
           role = SPEC_ID_TO_ROLE[specIdLocal] || 'Unknown';
-          logDebug('Failed to fetch playable-specialization, using static mapping: ' + role);
+          debugLog('Failed to fetch playable-specialization, using static mapping: ' + role);
         }
       } catch (err) {
         if (specIdLocal !== undefined) {
           // Use static mapping if fetch throws
           role = SPEC_ID_TO_ROLE[specIdLocal] || 'Unknown';
-          logDebug('Error fetching playable-specialization, using static mapping: ' + role);
+          debugLog('Error fetching playable-specialization, using static mapping: ' + role);
         }
       }
     } else if (specData.specializations && Array.isArray(specData.specializations)) {
       const selectedSpec = specData.specializations.find((s: any) => s.selected);
-      logDebug('Selected specialization: ' + JSON.stringify(selectedSpec, null, 2));
+      debugLog('Selected specialization: ' + JSON.stringify(selectedSpec, null, 2));
       if (selectedSpec && selectedSpec.specialization) {
         spec = selectedSpec.specialization.name || 'Unknown';
         specId = selectedSpec.specialization.id;
@@ -199,12 +198,12 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
         } else {
           role = (selectedSpec.specialization.role && selectedSpec.specialization.role.type) || 'Unknown';
         }
-        logDebug(`Parsed spec: ${spec}, role: ${role}`);
+        debugLog(`Parsed spec: ${spec}, role: ${role}`);
       } else {
-        logDebug('No selected specialization found or missing specialization field.');
+        debugLog('No selected specialization found or missing specialization field.');
       }
     } else {
-      logDebug('No specializations array or active_specialization found in specData.');
+      debugLog('No specializations array or active_specialization found in specData.');
     }
 
     if (specData.active_hero_talent_tree) {
@@ -212,7 +211,7 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
         id: specData.active_hero_talent_tree.id,
         name: specData.active_hero_talent_tree.name,
       };
-      logDebug('Parsed heroTalentTree: ' + JSON.stringify(heroTalentTree));
+      debugLog('Parsed heroTalentTree: ' + JSON.stringify(heroTalentTree));
     }
 
     // Get equipped items
@@ -233,7 +232,7 @@ const getWoWCharacterGear = async (characterName: string, serverName: string, re
     }
 
     const equippedItemsData = await equippedItemsResponse.json();
-    // logDebug('Equipped items data: ' + JSON.stringify(equippedItemsData, null, 2));
+    // debugLog('Equipped items data: ' + JSON.stringify(equippedItemsData, null, 2));
     console.log('Successfully fetched equipped items');
 
     // Process equipped items with proper error handling
@@ -280,7 +279,7 @@ const webSearchTool = createTool({
     const { query, limit } = context;
     try {
       const results: any[] = await googleSr.search({ query });
-      logDebug('Raw google-sr results: ' + JSON.stringify(results, null, 2));
+      debugLog('Raw google-sr results: ' + JSON.stringify(results, null, 2));
       return results.slice(0, limit || 5).map((r: any) => ({
         title: r.title,
         link: r.link,
@@ -288,7 +287,7 @@ const webSearchTool = createTool({
       }));
     } catch (err) {
       const error = err as Error;
-      logDebug('google-sr error: ' + (error.stack || error));
+      debugLog('google-sr error: ' + (error.stack || error));
       throw err;
     }
   },
@@ -328,11 +327,6 @@ const fetchUrlContentTool = createTool({
     }
   },
 });
-
-function logDebug(message: string) {
-  console.log(message);
-  fs.appendFileSync('wow_gear_debug.log', message + '\n');
-}
 
 async function fetchAndExtract(url: string) {
   console.log('Fetching and extracting:', url);
