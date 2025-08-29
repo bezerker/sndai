@@ -6,36 +6,6 @@ import * as googleSr from 'google-sr';
 import { bisScraperTool } from './bisTool';
 import { debugLog } from '../debugLog';
 
-interface WoWCharacterResponse {
-  name: string;
-  realm: {
-    name: string;
-    slug: string;
-  };
-  level: number;
-  character_class: {
-    name: string;
-  };
-  race: {
-    name: string;
-  };
-  gender: {
-    name: string;
-  };
-  equipped_items: Array<{
-    slot: {
-      name: string;
-    };
-    item: {
-      name: string;
-      quality: {
-        name: string;
-      };
-      level: number;
-    };
-  }>;
-}
-
 // Static mapping from spec ID to role
 import { SPEC_ID_TO_ROLE } from './specRoleMap';
 
