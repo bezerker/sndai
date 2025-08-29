@@ -10,7 +10,7 @@ import { wowCharacterGearTool, webSearchTool, fetchUrlContentTool } from '../too
 import { bisScraperTool } from '../tools/bisTool';
 
 // Get memory configuration from environment variables
-const memoryMaxMessages = process.env.MEMORY_MAX_MESSAGES ? parseInt(process.env.MEMORY_MAX_MESSAGES, 10) : 40;
+const memoryMaxMessages = process.env.MEMORY_MAX_MESSAGES ? parseInt(process.env.MEMORY_MAX_MESSAGES, 10) : 10;
 
 // Memory configuration from environment variables
 const semanticRecallEnabled = process.env.MEMORY_SEMANTIC_RECALL_ENABLED !== 'false';
