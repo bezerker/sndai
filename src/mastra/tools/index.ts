@@ -331,7 +331,9 @@ const fetchUrlContentTool = createTool({
 
 function logDebug(message: string) {
   console.log(message);
-  fs.appendFileSync('wow_gear_debug.log', message + '\n');
+  if (process.env.DEBUG) {
+    fs.appendFileSync('wow_gear_debug.log', message + '\n');
+  }
 }
 
 async function fetchAndExtract(url: string) {

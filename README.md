@@ -56,6 +56,15 @@ This project is the official AI-powered agent for the **Stand and Deliver** guil
 - Agent behavior (optional)
   - `AGENT_MAX_STEPS` (optional; maximum number of execution steps for the agent, defaults to no limit)
   - `MEMORY_MAX_MESSAGES` (optional; maximum number of messages to remember per thread, defaults to `10`)
+  - `DEBUG` (optional; when set, enables additional debug output; certain tools will also write a local `wow_gear_debug.log` during development)
+
+### Environment files & secrets
+
+- `.env.development`: local development only. This file is ignored by git; never commit real secrets.
+- `.env.test`: tracked and contains test-only dummy values. Do not put real credentials here. Keep it safe for CI/local tests.
+- `.env`: optional local override used by tools like `docker compose`; ignored by git. Never commit real secrets.
+
+Tip: prefer exporting env vars in your shell or using a local `.env.development`. Keep all real credentials out of version control.
 
 3. (Optional) If using a custom memory DB location, update `src/mastra/storage.ts` (defaults to `memory.db` in the repo root).
 
