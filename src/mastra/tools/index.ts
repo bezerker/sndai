@@ -332,7 +332,11 @@ const fetchUrlContentTool = createTool({
 function logDebug(message: string) {
   console.log(message);
   if (process.env.DEBUG) {
-    fs.appendFileSync('wow_gear_debug.log', message + '\n');
+    try {
+      fs.appendFileSync('wow_gear_debug.log', message + '\n');
+    } catch (err) {
+      console.error('Failed to write debug log:', err);
+    }
   }
 }
 
