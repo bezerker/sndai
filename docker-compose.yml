@@ -1,6 +1,6 @@
 services:
   sndai:
-    image: bezerker/sndai:v1.0.5-1
+    image: bezerker/sndai:v1.0.5-2
     env_file:
       - .env
     volumes:
