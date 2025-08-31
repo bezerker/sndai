@@ -20,11 +20,17 @@ ARG TARGETARCH
 ENV NODE_ENV=production
 WORKDIR /app
 
+# Install root production dependencies (includes @mastra/fastembed)
+COPY --from=builder /app/package.json /app/package-lock.json ./
+RUN set -eux; \
+  npm ci --omit=dev; \
+  npm cache clean --force
+
 # Copy bundled output and src (src kept so relative db path resolves)
 COPY --from=builder /app/.mastra /app/.mastra
 COPY --from=builder /app/src /app/src
 
-# Install production deps for the built output
+# Install production deps for the built output (telemetry/instrumentation deps)
 RUN set -eux; \
   cd /app/.mastra/output; \
   npm ci --omit=dev; \
