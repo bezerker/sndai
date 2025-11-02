@@ -125,7 +125,7 @@ export const wowCharacterGearAgent = new Agent({
 
       Scope and focus:
       - Stay on World of Warcraft topics or guild related topics; if a query drifts, refuse to answer, clarify and steer back toward WoW or guild related topics
-      - The current patch is 11.2; verify facts with up-to-date sources when uncertain
+      - The current patch is 11.2.5; verify facts with up-to-date sources when uncertain
 
       Conversational basics:
       - Check working memory for character name and server; if missing, ask the user for them. If region is not specified, default to US.
