@@ -96,7 +96,7 @@ const scrapeIcyVeins = async (spec: string, cls: string, role = "") => {
 export const bisScraperTool = createTool({
   id: "bis.scrape",
   description:
-    "Return the 'Overall BiS Gear' table for a given spec/class/role (Patch 11.1.5) using Icy-Veins.",
+    "Return the 'Overall BiS Gear' table for a given spec/class/role (Patch 12.0.1) using Icy-Veins.",
   inputSchema: z.object({
     spec: z.string(),
     cls: z.string(),

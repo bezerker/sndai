@@ -3,7 +3,7 @@ import { ollama } from 'ollama-ai-provider';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLVector } from '@mastra/libsql';
-import { fastembed} from '@mastra/fastembed';
+import { fastembed } from '@mastra/fastembed';
 import { storage } from '../storage';
 import { mcp } from '../mcp';
 import { wowCharacterGearTool, webSearchTool, fetchUrlContentTool } from '../tools';
@@ -90,7 +90,7 @@ const maxSteps = process.env.AGENT_MAX_STEPS ? parseInt(process.env.AGENT_MAX_ST
 
 export const agentMaxSteps = maxSteps;
 
-const model = modelProvider === 'openai' 
+const model = modelProvider === 'openai'
   ? createOpenAI({
     baseURL: openaiBaseUrl,
     apiKey: openaiApiKey,
@@ -125,7 +125,7 @@ export const wowCharacterGearAgent = new Agent({
 
       Scope and focus:
       - Stay on World of Warcraft topics or guild related topics; if a query drifts, refuse to answer, clarify and steer back toward WoW or guild related topics
-      - The current patch is 11.2.5; verify facts with up-to-date sources when uncertain
+      - The current patch is 12.0.1; verify facts with up-to-date sources when uncertain
 
       Conversational basics:
       - Check working memory for character name and server; if missing, ask the user for them. If region is not specified, default to US.
@@ -160,7 +160,7 @@ export const wowCharacterGearAgent = new Agent({
       - Update working memory with new information learned during the conversation
     `,
   model,
-  tools: { 
+  tools: {
     ...(await mcp.getTools()),
     wowCharacterGearTool,
     bisScraperTool,
