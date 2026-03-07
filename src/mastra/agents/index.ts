@@ -54,7 +54,8 @@ const memory = new Memory({
   storage,
   embedder: fastembed,
   vector: new LibSQLVector({
-    connectionUrl: 'file:../../memory.db',
+    id: 'main-libsql-vector',
+    url: 'file:../../memory.db',
   }),
   options: {
     lastMessages: memoryMaxMessages,
@@ -68,9 +69,7 @@ const memory = new Memory({
       scope: workingMemoryScope,
       template: workingMemoryTemplate,
     } : undefined,
-    threads: {
-      generateTitle: true,
-    }
+    generateTitle: true,
   }
 });
 
@@ -100,6 +99,7 @@ const model = modelProvider === 'openai'
 
 
 export const wowCharacterGearAgent = new Agent({
+  id: 'wow-character-gear-agent',
   name: 'WoW Character Gear Agent',
   instructions: `
       You are a helpful World of Warcraft assistant with enhanced memory capabilities. You can:

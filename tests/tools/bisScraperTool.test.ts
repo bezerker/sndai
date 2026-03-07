@@ -26,7 +26,7 @@ describe('bisScraperTool', () => {
 
   it('requires a role or specId that resolves to a role', async () => {
     await expect(
-      bisScraperTool.execute({ context: { spec: 'Devastation', cls: 'Evoker', specId: '', role: '' } } as any)
+      bisScraperTool.execute?.({ spec: 'Devastation', cls: 'Evoker', specId: '', role: '' }, {})
     ).rejects.toThrow(/Role could not be determined/);
   });
 
@@ -35,7 +35,7 @@ describe('bisScraperTool', () => {
       text: async () => htmlWithHeaderAndTable(),
     } as any);
 
-    const result = await bisScraperTool.execute({ context: { spec: 'Devastation', cls: 'Evoker', specId: '1467', role: '' } } as any);
+    const result = await bisScraperTool.execute?.({ spec: 'Devastation', cls: 'Evoker', specId: '1467', role: '' }, {});
 
     expect(result.role).toBe('dps');
     expect(result.bis).toEqual({ Head: 'Test Helm', Chest: 'Test Chest' });
@@ -46,7 +46,7 @@ describe('bisScraperTool', () => {
     (fetch as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('network down'));
 
     await expect(
-      bisScraperTool.execute({ context: { spec: 'Devastation', cls: 'Evoker', specId: '1467', role: '' } } as any)
+      bisScraperTool.execute?.({ spec: 'Devastation', cls: 'Evoker', specId: '1467', role: '' }, {})
     ).rejects.toThrow(/network down/);
   });
 });

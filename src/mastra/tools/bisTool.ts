@@ -111,8 +111,8 @@ export const bisScraperTool = createTool({
     source: z.string().url(),
     bis: z.record(z.string(), z.string()),
   }),
-  execute: async ({ context }) => {
-    let { spec, cls, specId, role } = context as {
+  execute: async (inputData, _context) => {
+    let { spec, cls, specId, role } = inputData as {
       spec: string;
       cls: string;
       specId: string; // may be empty

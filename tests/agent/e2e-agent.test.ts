@@ -8,7 +8,7 @@ vi.mock('../../src/mastra/tools', async (orig) => {
     ...actual,
     wowCharacterGearTool: {
       id: 'get-wow-character-gear',
-      execute: vi.fn(async ({ context }) => ({
+      execute: vi.fn(async (inputData: { characterName: string; serverName: string; region: string }) => ({
         name: 'Bezvoker',
         server: 'Korgath',
         level: 80,
@@ -34,11 +34,14 @@ vi.mock('../../src/mastra/mcp', () => ({ mcp: { getTools: async () => ({}) } }))
 // Avoid model network calls by mocking the Agent's generate to just call tool directly when prompt contains a lookup intent
 vi.mock('@mastra/core/agent', async (orig) => {
   const actual = await (orig as any)();
+  const { wowCharacterGearTool } = await import('../../src/mastra/tools');
   class FakeAgent extends actual.Agent {
     async generate(message: string) {
       if (/bezvoker/i.test(message) && /korgath/i.test(message)) {
-        const data = await (this as any).tools.wowCharacterGearTool.execute({ context: { characterName: 'bezvoker', serverName: 'korgath', region: 'us' } });
-        return { text: `Found ${data.name} on ${data.server} (${data.class} - ${data.spec}).` };
+        const data = await wowCharacterGearTool.execute?.({ characterName: 'bezvoker', serverName: 'korgath', region: 'us' }, {});
+        if (data && !('error' in data)) {
+          return { text: `Found ${data.name} on ${data.server} (${data.class} - ${data.spec}).` };
+        }
       }
       return { text: 'No-op' };
     }

@@ -64,7 +64,7 @@ describe('wowCharacterGearTool', () => {
       return textResponse('not found', false, 404);
     });
 
-    const result = await wowCharacterGearTool.execute({ context: { characterName: 'bezvoker', serverName: 'korgath', region: 'us' } } as any);
+    const result = await wowCharacterGearTool.execute?.({ characterName: 'bezvoker', serverName: 'korgath', region: 'us' }, {});
 
     expect(fetchMock).toHaveBeenCalled();
     expect(result.name).toBe('Bezvoker');
@@ -89,7 +89,7 @@ describe('wowCharacterGearTool', () => {
       return textResponse('not found', false, 404);
     });
 
-    const result = await wowCharacterGearTool.execute({ context: { characterName: 'bezvoker', serverName: 'korgath', region: 'us' } } as any);
+    const result = await wowCharacterGearTool.execute?.({ characterName: 'bezvoker', serverName: 'korgath', region: 'us' }, {});
     expect(result.role).toBe('tank');
   });
 
@@ -103,7 +103,7 @@ describe('wowCharacterGearTool', () => {
     });
 
     await expect(
-      wowCharacterGearTool.execute({ context: { characterName: 'bezvoker', serverName: 'korgath', region: 'us' } } as any)
+      wowCharacterGearTool.execute?.({ characterName: 'bezvoker', serverName: 'korgath', region: 'us' }, {})
     ).rejects.toThrow(/Failed to get OAuth token/);
   });
 
@@ -123,7 +123,7 @@ describe('wowCharacterGearTool', () => {
       return textResponse('not found', false, 404);
     });
 
-    const result = await wowCharacterGearTool.execute({ context: { characterName: 'bezvoker', serverName: 'korgath', region: 'us' } } as any);
+    const result = await wowCharacterGearTool.execute?.({ characterName: 'bezvoker', serverName: 'korgath', region: 'us' }, {});
     expect(result.gear).toEqual([]);
   });
 });
