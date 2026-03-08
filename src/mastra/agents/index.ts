@@ -1,5 +1,5 @@
-import { createOpenAI, openai } from '@ai-sdk/openai';
-import { ollama } from 'ollama-ai-provider';
+import { createOpenAI } from '@ai-sdk/openai';
+import { ollama } from 'ollama-ai-provider-v2';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLVector } from '@mastra/libsql';
@@ -161,7 +161,7 @@ export const wowCharacterGearAgent = new Agent({
     `,
   model,
   tools: {
-    ...(await mcp.getTools()),
+    ...(await mcp.listTools()),
     wowCharacterGearTool,
     bisScraperTool,
     webSearchTool,

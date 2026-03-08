@@ -29,7 +29,7 @@ vi.mock('../../src/mastra/tools', async (orig) => {
 });
 
 // Avoid invoking MCP providers
-vi.mock('../../src/mastra/mcp', () => ({ mcp: { getTools: async () => ({}) } }));
+vi.mock('../../src/mastra/mcp', () => ({ mcp: { listTools: async () => ({}) } }));
 
 // Avoid model network calls by mocking the Agent's generate to just call tool directly when prompt contains a lookup intent
 vi.mock('@mastra/core/agent', async (orig) => {

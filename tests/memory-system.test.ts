@@ -33,7 +33,7 @@ process.env.MEMORY_MAX_MESSAGES = '20';
 // This allows us to test the memory functionality without external MCP server connections
 vi.mock('../src/mastra/mcp.js', () => ({
   mcp: {
-    getTools: vi.fn().mockResolvedValue({}),
+    listTools: vi.fn().mockResolvedValue({}),
   },
 }));
 
