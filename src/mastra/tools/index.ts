@@ -39,8 +39,8 @@ const wowCharacterGearTool = createTool({
       itemLevel: z.number(),
     })),
   }),
-  execute: async ({ context }) => {
-    return await getWoWCharacterGear(context.characterName, context.serverName, context.region);
+  execute: async (inputData, _context) => {
+    return await getWoWCharacterGear(inputData.characterName, inputData.serverName, inputData.region);
   },
 });
 
@@ -245,8 +245,8 @@ const webSearchTool = createTool({
     link: z.string(),
     snippet: z.string().optional(),
   })),
-  execute: async ({ context }) => {
-    const { query, limit } = context;
+  execute: async (inputData, _context) => {
+    const { query, limit } = inputData;
     try {
       const results: any[] = await googleSr.search({ query });
       debugLog('Raw google-sr results: ' + JSON.stringify(results, null, 2));
@@ -278,8 +278,8 @@ const fetchUrlContentTool = createTool({
     url: z.string().optional(),
     error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
-    const { url } = context;
+  execute: async (inputData, _context) => {
+    const { url } = inputData;
     try {
       const result = await fetchAndExtract(url);
       if (!result) {

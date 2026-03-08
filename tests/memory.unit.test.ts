@@ -36,7 +36,7 @@ beforeAll(async () => {
   const { LibSQLStore } = await import('@mastra/libsql');
   const { Memory } = await import('@mastra/memory');
 
-  const storage = new LibSQLStore({ url: DB_URL });
+  const storage = new LibSQLStore({ id: 'test-libsql', url: DB_URL });
 
   // Disable semanticRecall and don't attach a vector to avoid calling the embedder in this unit test.
   memory = new Memory({
@@ -85,13 +85,19 @@ describe('Memory unit tests (in-memory)', () => {
     const saveResult = await memory.saveMessages({ messages, memoryConfig: {} });
     expect(saveResult).toBeDefined();
 
-    const q = await memory.query({ threadId, resourceId });
+    const q = await memory.recall({ threadId, resourceId });
     expect(q).toBeDefined();
-    // Expect at least one message saved
+    // Expect at least one message saved (v1 returns { messages } only)
     expect(Array.isArray(q.messages)).toBe(true);
     expect(q.messages.length).toBeGreaterThanOrEqual(1);
-    // uiMessages usually contain rendered content - assert presence of the saved text somewhere
-    const found = (q.uiMessages || []).some((m: any) => (m.content || '').includes('Hello memory') || (m.text || '').includes('Hello memory'));
+    const getText = (m: any) => {
+      if (typeof m.content === 'string') return m.content;
+      if (m.text) return m.text;
+      if (Array.isArray(m.content)) return (m.content as any[]).map((p: any) => p.text || p.content || '').join('');
+      if (m.content && typeof m.content === 'object') return JSON.stringify(m.content);
+      return '';
+    };
+    const found = q.messages.some((m: any) => getText(m).includes('Hello memory'));
     expect(found).toBe(true);
   });
 

@@ -19,8 +19,10 @@ if (process.env.DISCORD_ENABLED === 'true') {
   discordAdapter.setMessageHandler(async (message) => {
     const cleanMessage = message.content.replace(`<@${message.client.user?.id}>`, '').trim();
     const result = await wowCharacterGearAgent.generate(cleanMessage, {
-      resourceId: message.author.id,
-      threadId: `discord-${message.author.id}`,
+      memory: {
+        resource: message.author.id,
+        thread: `discord-${message.author.id}`,
+      },
       temperature,
       ...(maxSteps && { maxSteps }),
     });
