@@ -41,8 +41,23 @@ describe('fetchUrlContentTool', () => {
   it('returns error when extractor throws', async () => {
     (extract as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('boom'));
 
-  const result = await fetchUrlContentTool.execute?.({ url: 'https://explode.com' }, {});
-  // Implementation catches extractor errors and returns a generic 'Could not extract content.'
-  expect(result).toEqual({ error: 'Could not extract content.' });
+    const result = await fetchUrlContentTool.execute?.({ url: 'https://explode.com' }, {});
+    // Implementation catches extractor errors and returns a generic 'Could not extract content.'
+    expect(result).toEqual({ error: 'Could not extract content.' });
+  });
+
+  it('returns generic extraction error on timeout-like failures', async () => {
+    (extract as unknown as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('ETIMEDOUT'));
+
+    const result = await fetchUrlContentTool.execute?.({ url: 'https://slow.example.com' }, {});
+    expect(result).toEqual({ error: 'Could not extract content.' });
+  });
+
+  it('rejects invalid URL input values', async () => {
+    const result = await fetchUrlContentTool.execute?.({ url: 'notaurl' }, {});
+    expect(result).toMatchObject({
+      error: true,
+      message: expect.stringContaining('Tool input validation failed for fetch-url-content'),
+    });
   });
 });

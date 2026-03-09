@@ -113,4 +113,100 @@ describe('Memory unit tests (in-memory)', () => {
     // Should not throw; may be string/obj/undefined depending on implementation
     expect(wm === undefined || typeof wm === 'string' || typeof wm === 'object').toBe(true);
   });
+
+  it('keeps user data isolated across different resources', async () => {
+    const userA = { resourceId: 'user_a', threadId: 'thread_a' };
+    const userB = { resourceId: 'user_b', threadId: 'thread_b' };
+
+    await memory.createThread({ resourceId: userA.resourceId, title: 'User A', threadId: userA.threadId });
+    await memory.createThread({ resourceId: userB.resourceId, title: 'User B', threadId: userB.threadId });
+
+    await memory.saveMessages({
+      messages: [
+        {
+          id: 'ua-1',
+          threadId: userA.threadId,
+          resourceId: userA.resourceId,
+          role: 'user',
+          content: 'I main a mage on Area52',
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      memoryConfig: {},
+    });
+
+    await memory.saveMessages({
+      messages: [
+        {
+          id: 'ub-1',
+          threadId: userB.threadId,
+          resourceId: userB.resourceId,
+          role: 'user',
+          content: 'I main a warrior on Sargeras',
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      memoryConfig: {},
+    });
+
+    const recallA = await memory.recall({ threadId: userA.threadId, resourceId: userA.resourceId });
+    const recallB = await memory.recall({ threadId: userB.threadId, resourceId: userB.resourceId });
+
+    const toJoinedText = (messages: any[]) => messages
+      .map((m: any) => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content || '')))
+      .join(' ')
+      .toLowerCase();
+
+    const textA = toJoinedText(recallA.messages || []);
+    const textB = toJoinedText(recallB.messages || []);
+
+    expect(textA).toContain('mage');
+    expect(textA).not.toContain('warrior');
+    expect(textB).toContain('warrior');
+    expect(textB).not.toContain('mage');
+  });
+
+  it('enforces lastMessages cap in a limited-memory configuration', async () => {
+    const { LibSQLStore } = await import('@mastra/libsql');
+    const { Memory } = await import('@mastra/memory');
+
+    const limitedMemory: any = new Memory({
+      storage: new LibSQLStore({ id: 'test-libsql-limited', url: DB_URL }),
+      embedder: fakeEmbedder as any,
+      vector: undefined,
+      options: {
+        lastMessages: 3,
+        semanticRecall: false,
+        workingMemory: { enabled: false },
+      },
+    });
+
+    if (typeof limitedMemory.initialize === 'function') {
+      await limitedMemory.initialize();
+    }
+
+    const resourceId = 'limited_resource';
+    const threadId = 'limited_thread';
+    await limitedMemory.createThread({ resourceId, title: 'Limited', threadId });
+
+    const now = Date.now();
+    const messages = ['m1', 'm2', 'm3', 'm4', 'm5'].map((id, idx) => ({
+      id,
+      threadId,
+      resourceId,
+      role: 'user' as const,
+      content: `message-${idx + 1}`,
+      createdAt: new Date(now + idx).toISOString(),
+    }));
+
+    await limitedMemory.saveMessages({ messages, memoryConfig: {} });
+    const recall = await limitedMemory.recall({ threadId, resourceId });
+
+    expect(Array.isArray(recall.messages)).toBe(true);
+    expect((recall.messages || []).length).toBeLessThanOrEqual(3);
+
+    if (typeof limitedMemory.close === 'function') {
+      await limitedMemory.close();
+    }
+  });
 });

@@ -19,6 +19,51 @@ function htmlWithHeaderAndTable() {
   `;
 }
 
+function htmlWithHeaderNoTable() {
+  return `
+  <html>
+    <body>
+      <h2>Overall BiS Gear</h2>
+      <div>No table here</div>
+      <p>Still no table</p>
+    </body>
+  </html>
+  `;
+}
+
+function htmlWithoutHeader() {
+  return `
+  <html>
+    <body>
+      <h2>Rotation Guide</h2>
+      <table>
+        <tr><th>Slot</th><th>Item</th></tr>
+        <tr><td>Head</td><td>Not BiS</td></tr>
+      </table>
+    </body>
+  </html>
+  `;
+}
+
+function htmlWithHeaderAndNonSiblingTable() {
+  return `
+  <html>
+    <body>
+      <h2>Overall BiS Gear</h2>
+      <section>
+        <div>Context section</div>
+      </section>
+      <div>
+        <table>
+          <tr><th>Slot</th><th>Item</th></tr>
+          <tr><td>Head</td><td>Fallback Helm</td></tr>
+        </table>
+      </div>
+    </body>
+  </html>
+  `;
+}
+
 describe('bisScraperTool', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -48,5 +93,44 @@ describe('bisScraperTool', () => {
     await expect(
       bisScraperTool.execute?.({ spec: 'Devastation', cls: 'Evoker', specId: '1467', role: '' }, {})
     ).rejects.toThrow(/network down/);
+  });
+
+  it('throws a clear error when BiS header cannot be found', async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: async () => htmlWithoutHeader(),
+    } as any);
+
+    await expect(
+      bisScraperTool.execute?.({ spec: 'Devastation', cls: 'Evoker', specId: '1467', role: '' }, {}),
+    ).rejects.toThrow(/BiS header not found/);
+  });
+
+  it('throws a clear error when BiS table cannot be found', async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: async () => htmlWithHeaderNoTable(),
+    } as any);
+
+    await expect(
+      bisScraperTool.execute?.({ spec: 'Devastation', cls: 'Evoker', specId: '1467', role: '' }, {}),
+    ).rejects.toThrow(/BiS table not found after header/);
+  });
+
+  it('uses DOM-order fallback when table is not direct sibling', async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: async () => htmlWithHeaderAndNonSiblingTable(),
+    } as any);
+
+    const result = await bisScraperTool.execute?.(
+      { spec: 'Devastation', cls: 'Evoker', specId: '1467', role: '' },
+      {},
+    );
+
+    expect(result.bis).toEqual({ Head: 'Fallback Helm' });
+  });
+
+  it('throws when specId does not resolve to a role', async () => {
+    await expect(
+      bisScraperTool.execute?.({ spec: 'Devastation', cls: 'Evoker', specId: '999999', role: '' }, {}),
+    ).rejects.toThrow(/Role could not be determined/);
   });
 });
