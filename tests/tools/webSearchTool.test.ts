@@ -39,4 +39,28 @@ describe('webSearchTool', () => {
     const results = await webSearchTool.execute?.({ query: 'wow', limit: 5 }, {});
     expect(results).toEqual([{ title: 'OnlyOne', link: 'https://one.com', snippet: 'one' }]);
   });
+
+  it('propagates underlying search errors', async () => {
+    (googleSr.search as any).mockRejectedValue(new Error('rate limited'));
+
+    await expect(
+      webSearchTool.execute?.({ query: 'wow patch notes', limit: 5 }, {}),
+    ).rejects.toThrow(/rate limited/);
+  });
+
+  it('rejects invalid limit values below minimum', async () => {
+    const result = await webSearchTool.execute?.({ query: 'wow', limit: 0 }, {});
+    expect(result).toMatchObject({
+      error: true,
+      message: expect.stringContaining('Tool input validation failed for web-search'),
+    });
+  });
+
+  it('rejects invalid limit values above maximum', async () => {
+    const result = await webSearchTool.execute?.({ query: 'wow', limit: 11 }, {});
+    expect(result).toMatchObject({
+      error: true,
+      message: expect.stringContaining('Tool input validation failed for web-search'),
+    });
+  });
 });

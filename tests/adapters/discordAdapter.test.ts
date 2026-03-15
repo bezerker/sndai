@@ -122,4 +122,130 @@ describe('DiscordAdapter mass-mention handling', () => {
     expect(message.reply).toHaveBeenCalledTimes(1);
     expect(message.reply).toHaveBeenCalledWith('Hello back!');
   });
+
+  it('sends a single message when response is exactly 2000 chars', async () => {
+    const adapter = new DiscordAdapter();
+    const handler = vi.fn().mockResolvedValue('x'.repeat(2000));
+    adapter.setMessageHandler(handler);
+
+    await adapter.start();
+
+    const channel = new (Discord as any).TextChannel();
+    const message: any = {
+      content: '<@bot-id> long response',
+      author: { bot: false, tag: 'tester#0001' },
+      channel,
+      mentions: {
+        everyone: false,
+        has: vi.fn((user: any) => !!user && user.id === 'bot-id'),
+      },
+      reply: vi.fn().mockResolvedValue(undefined),
+    };
+
+    (Discord as any).__mock.emit(Discord.Events.MessageCreate, message);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(message.reply).toHaveBeenCalledTimes(1);
+    expect(String(message.reply.mock.calls[0][0]).length).toBe(2000);
+  });
+
+  it('splits long responses into <=2000 char chunks', async () => {
+    const adapter = new DiscordAdapter();
+    const longResponse = `${'a'.repeat(2000)} ${'b'.repeat(2000)} ${'c'.repeat(5)}`;
+    const handler = vi.fn().mockResolvedValue(longResponse);
+    adapter.setMessageHandler(handler);
+
+    await adapter.start();
+
+    const channel = new (Discord as any).TextChannel();
+    const message: any = {
+      content: '<@bot-id> split this',
+      author: { bot: false, tag: 'tester#0001' },
+      channel,
+      mentions: {
+        everyone: false,
+        has: vi.fn((user: any) => !!user && user.id === 'bot-id'),
+      },
+      reply: vi.fn().mockResolvedValue(undefined),
+    };
+
+    (Discord as any).__mock.emit(Discord.Events.MessageCreate, message);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(message.reply.mock.calls.length).toBeGreaterThan(1);
+    for (const [chunk] of message.reply.mock.calls) {
+      expect(String(chunk).length).toBeLessThanOrEqual(2000);
+    }
+  });
+
+  it('splits long unbroken words when no whitespace is available', async () => {
+    const adapter = new DiscordAdapter();
+    const handler = vi.fn().mockResolvedValue('z'.repeat(2500));
+    adapter.setMessageHandler(handler);
+
+    await adapter.start();
+
+    const channel = new (Discord as any).TextChannel();
+    const message: any = {
+      content: '<@bot-id> split hard',
+      author: { bot: false, tag: 'tester#0001' },
+      channel,
+      mentions: {
+        everyone: false,
+        has: vi.fn((user: any) => !!user && user.id === 'bot-id'),
+      },
+      reply: vi.fn().mockResolvedValue(undefined),
+    };
+
+    (Discord as any).__mock.emit(Discord.Events.MessageCreate, message);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(message.reply).toHaveBeenCalledTimes(2);
+    expect(String(message.reply.mock.calls[0][0]).length).toBe(2000);
+    expect(String(message.reply.mock.calls[1][0]).length).toBe(500);
+  });
+
+  it('continues processing when sendTyping rejects', async () => {
+    const adapter = new DiscordAdapter();
+    const handler = vi.fn().mockResolvedValue('Still works');
+    adapter.setMessageHandler(handler);
+
+    await adapter.start();
+
+    const channel = new (Discord as any).TextChannel();
+    channel.sendTyping.mockRejectedValue(new Error('typing failed'));
+
+    const message: any = {
+      content: '<@bot-id> hello',
+      author: { bot: false, tag: 'tester#0001' },
+      channel,
+      mentions: {
+        everyone: false,
+        has: vi.fn((user: any) => !!user && user.id === 'bot-id'),
+      },
+      reply: vi.fn().mockResolvedValue(undefined),
+    };
+
+    (Discord as any).__mock.emit(Discord.Events.MessageCreate, message);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(message.reply).toHaveBeenCalledWith('Still works');
+  });
+
+  it('handles shard lifecycle events without throwing', () => {
+    const adapter = new DiscordAdapter();
+    expect(adapter).toBeDefined();
+
+    expect(() => {
+      (Discord as any).__mock.emit('shardDisconnect', { code: 1006 }, 0);
+      (Discord as any).__mock.emit('shardReconnecting', 0);
+      (Discord as any).__mock.emit('warn', 'slow gateway');
+      (Discord as any).__mock.emit('error', new Error('gateway dropped'));
+    }).not.toThrow();
+  });
 });

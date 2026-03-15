@@ -126,4 +126,82 @@ describe('wowCharacterGearTool', () => {
     const result = await wowCharacterGearTool.execute?.({ characterName: 'bezvoker', serverName: 'korgath', region: 'us' }, {});
     expect(result.gear).toEqual([]);
   });
+
+  it('throws when character lookup returns 404', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (...args: FetchArgs) => {
+      const url = String(args[0]);
+      if (url.includes('/oauth/token')) return jsonResponse({ access_token: mockToken });
+      if (url.includes('/profile/wow/character/') && !url.includes('/specializations') && !url.includes('/equipment')) {
+        return textResponse('character not found', false, 404);
+      }
+      return textResponse('not found', false, 404);
+    });
+
+    await expect(
+      wowCharacterGearTool.execute?.({ characterName: 'ghost', serverName: 'missing-realm', region: 'us' }, {}),
+    ).rejects.toThrow(/Failed to fetch character data/);
+  });
+
+  it('propagates network errors during character lookup', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (...args: FetchArgs) => {
+      const url = String(args[0]);
+      if (url.includes('/oauth/token')) return jsonResponse({ access_token: mockToken });
+      if (url.includes('/profile/wow/character/') && !url.includes('/specializations') && !url.includes('/equipment')) {
+        throw new Error('fetch failed: socket hang up');
+      }
+      return textResponse('not found', false, 404);
+    });
+
+    await expect(
+      wowCharacterGearTool.execute?.({ characterName: 'bezvoker', serverName: 'korgath', region: 'us' }, {}),
+    ).rejects.toThrow(/socket hang up/);
+  });
+
+  it('uses safe fallback values for sparse character payloads', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (...args: FetchArgs) => {
+      const url = String(args[0]);
+      if (url.includes('/oauth/token')) return jsonResponse({ access_token: mockToken });
+      if (url.includes('/profile/wow/character/') && !url.includes('/specializations') && !url.includes('/equipment')) {
+        return jsonResponse({ name: 'Sparse', realm: {} });
+      }
+      if (url.includes('/specializations')) return jsonResponse({});
+      if (url.includes('/equipment')) return jsonResponse({});
+      return textResponse('not found', false, 404);
+    });
+
+    const result = await wowCharacterGearTool.execute?.({ characterName: 'sparse', serverName: 'korgath', region: 'us' }, {});
+
+    expect(result.class).toBe('Unknown');
+    expect(result.race).toBe('Unknown');
+    expect(result.gender).toBe('Unknown');
+    expect(result.guild).toBe('Unknown');
+    expect(result.spec).toBe('Unknown');
+    expect(result.role).toBe('Unknown');
+    expect(result.gear).toEqual([]);
+  });
+
+  it('normalizes names with spaces and casing before request', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (...args: FetchArgs) => {
+      const url = String(args[0]);
+      if (url.includes('/oauth/token')) return jsonResponse({ access_token: mockToken });
+      if (url.includes('/profile/wow/character/') && !url.includes('/specializations') && !url.includes('/equipment')) {
+        return jsonResponse({ name: 'Bez Voker', realm: { name: 'Wyrmrest Accord' } });
+      }
+      if (url.includes('/specializations')) return jsonResponse({ active_specialization: { id: 1467, name: 'Devastation' } });
+      if (url.includes('/data/wow/playable-specialization/')) return jsonResponse({ role: { type: 'dps' } });
+      if (url.includes('/equipment')) return jsonResponse({ equipped_items: [] });
+      return textResponse('not found', false, 404);
+    });
+
+    await wowCharacterGearTool.execute?.(
+      { characterName: '  Bez Voker  ', serverName: '  Wyrmrest Accord  ', region: 'us' },
+      {},
+    );
+
+    const profileCall = fetchMock.mock.calls
+      .map((call) => String(call[0]))
+      .find((url) => url.includes('/profile/wow/character/') && !url.includes('/specializations') && !url.includes('/equipment'));
+
+    expect(profileCall).toContain('/wyrmrest-accord/bez-voker?');
+  });
 });
